@@ -1,0 +1,124 @@
+create table PROYECTO_LUCIA.HISTORICO_GRUPO_LECTURA
+(
+    ID_CLUB         NUMBER not null,
+    NUMERO_DE_GRUPO NUMBER not null,
+    ID_MIEMBRO      NUMBER not null,
+    FECHA_INICIO    DATE   not null,
+    FECHA_FIN       DATE,
+    constraint PK_HIST_GRUPO_LECTURA
+        primary key (ID_CLUB, NUMERO_DE_GRUPO, ID_MIEMBRO, FECHA_INICIO)
+)
+/
+
+create table PROYECTO_LUCIA.GRUPO_DE_LECTURA
+(
+    ID_CLUB           NUMBER       not null,
+    NUMERO_DE_GRUPO   NUMBER       not null,
+    FECHA_DE_CREACION DATE         not null,
+    CATEGORIA_EDAD    VARCHAR2(10) not null
+        constraint CHK_GL_CATEGORIA_EDAD
+            check (categoria_edad IN ('Adulto', 'Joven', 'Nino')),
+    DIA_REUNION       VARCHAR2(15) not null
+        constraint CHK_GL_DIA_REUNION
+            check (dia_reunion IN ('Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes')),
+    HORA_INICIO       NUMBER(4, 2) not null
+        constraint CHK_GL_HORA_INICIO
+            check (hora_inicio BETWEEN 17 AND 19),
+    constraint PK_GRUPO_DE_LECTURA
+        primary key (ID_CLUB, NUMERO_DE_GRUPO)
+)
+/
+
+create table PROYECTO_LUCIA.HISTORICO_MEMBRESIA
+(
+    ID_MIEMBRO    NUMBER       not null,
+    ID_CLUB       NUMBER       not null,
+    FECHA_INICIO  DATE         not null,
+    FECHA_FIN     DATE,
+    ESTATUS       VARCHAR2(20) not null
+        constraint CHK_HM_ESTATUS
+            check (estatus IN ('Activa', 'Inactiva', 'Retirada', 'Morosa', 'Expulsada')),
+    MOTIVO_RETIRO VARCHAR2(20)
+        constraint CHK_HM_MOTIVO_RETIRO
+            check (motivo_retiro IN ('Voluntario', 'Inasistencia', 'Deudas', 'Otro')),
+    constraint PK_HISTORICO_MEMBRESIA
+        primary key (ID_MIEMBRO, ID_CLUB, FECHA_INICIO)
+)
+/
+
+create table PROYECTO_LUCIA.PAGO_MEMBRESIA
+(
+    ID         NUMBER        not null
+        constraint PK_PAGO_MEMBRESIA
+            primary key,
+    FECHA      DATE          not null,
+    MONTO      NUMBER(10, 2) not null
+        constraint CHK_PM_MONTO
+            check (monto > 0),
+    ID_MIEMBRO NUMBER        not null,
+    ID_CLUB    NUMBER        not null
+)
+/
+
+create table PROYECTO_LUCIA.CALENDARIO_MES
+(
+    ID_CLUB          NUMBER  not null,
+    NUMERO_DE_GRUPO  NUMBER  not null,
+    ISBN_LIBRO       NUMBER  not null,
+    FECHA_REUNION    DATE    not null,
+    REALIZADA        CHAR(2) not null
+        constraint CHK_CM_REALIZADA
+            check (realizada IN ('SI', 'NO')),
+    CONCLUSIONES     CLOB,
+    VALORACION_FINAL NUMBER(2, 1)
+        constraint CHK_CM_VALORACION
+            check (valoracion_final BETWEEN 1 AND 5),
+    ULTIMA_DISCUSION CHAR(2)
+        constraint CHK_CM_ULTIMA_DISCUSION
+            check (ultima_discusion IN ('SI', 'NO')),
+    ID_MODERADOR     NUMBER  not null,
+    constraint PK_CALENDARIO_MES
+        primary key (ID_CLUB, NUMERO_DE_GRUPO, ISBN_LIBRO, FECHA_REUNION)
+)
+/
+
+create table PROYECTO_LUCIA.INASISTENCIA
+(
+    ID_CLUB         NUMBER not null,
+    NUMERO_DE_GRUPO NUMBER not null,
+    ISBN_LIBRO      NUMBER not null,
+    FECHA_REUNION   DATE   not null,
+    ID_MIEMBRO      NUMBER not null,
+    constraint PK_INASISTENCIA
+        primary key (ID_CLUB, NUMERO_DE_GRUPO, ISBN_LIBRO, FECHA_REUNION, ID_MIEMBRO)
+)
+/
+
+create table PROYECTO_LUCIA.PRESENTACION_DE_LA_OBRA
+(
+    ID_OBRA             NUMBER       not null,
+    FECHA               DATE         not null,
+    VALORACION          NUMBER(2, 1) not null
+        constraint CHK_PO_VALORACION
+            check (valoracion BETWEEN 1 AND 5),
+    CANTIDAD_ASISTENTES NUMBER       not null
+        constraint CHK_PO_ASISTENTES
+            check (cantidad_asistentes > 0),
+    constraint PK_PRESENTACION_DE_LA_OBRA
+        primary key (ID_OBRA, FECHA)
+)
+/
+
+create table PROYECTO_LUCIA.MEJOR_ACTOR
+(
+    ID_OBRA            NUMBER not null,
+    ID_MIEMBRO         NUMBER not null,
+    FECHA_PRESENTACION DATE   not null,
+    VOTOS              NUMBER not null
+        constraint CHK_MA_VOTOS
+            check (votos > 0),
+    constraint PK_MEJOR_ACTOR
+        primary key (ID_OBRA, ID_MIEMBRO, FECHA_PRESENTACION)
+)
+/
+
