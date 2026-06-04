@@ -11,19 +11,15 @@
 Los recursos están unificados en el servidor local. Para conectarse desde herramientas externas (DataGrip, DBeaver, SQL Developer o código Java/JDBC):
 
 * **Manejador:** Oracle Database
-* **Host / IP:** `192.168.56.101`
+* **Host / IP:** `192.168.11.115`
 * **Puerto:** `1521`
 * **SID / Service Name:** `XEPDB1` (Base de datos conectable)
-* **Usuario:** `ucab_db`
-* **Password:** `0155`
+* **Usuario:** `SYSTEM` (No recomendable en una b/d real)
+* **Password:** `Andresito@1`
 
 ### URL de Conexión Estándar (JDBC):
 
-`jdbc:oracle:thin:@//192.168.56.101:1521/XEPDB1`
-
-### URL para Neovim (vim-dadbod):
-
-`oracle://ucab_db:0155@192.168.56.101:1521/XEPDB1`
+`jdbc:oracle:thin:@192.168.11.115:1521:XE`
 
 ## Estructura de Entregas
 
