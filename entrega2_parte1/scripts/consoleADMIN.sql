@@ -1,62 +1,81 @@
--- 1. Limpieza total (por si acaso quedaron restos)
+-- ==========================================
+-- SECCION 1: 
+-- Integrante: Gabriel Bracho
+-- ==========================================
+
+-- Limpieza total (por si acaso quedaron restos)
 drop table sojg_autor_libro cascade constraints;
 drop table sojg_libro cascade constraints;
 drop table sojg_autor cascade constraints;
 drop table sojg_institucion cascade constraints;
 drop table sojg_ciudad cascade constraints;
 drop table sojg_pais cascade constraints;
-drop sequence seq_sojg_pais;
-drop sequence seq_sojg_ciudad;
-drop sequence seq_sojg_institucion;
-drop sequence seq_sojg_autor;
-drop function sojg_conversion_monetaria;
+drop sequence sojg_seq_pais;
+drop sequence sojg_seq_ciudad;
+drop sequence seq_sojg_seq_institucion;
+drop sequence seq_sojg_seq_autor;
+drop function sojg_seq_conversion_monetaria;
 
--- 2. Creación de secuencias
-create sequence seq_sojg_pais start with 1 increment by 1;
-create sequence seq_sojg_ciudad start with 1 increment by 1;
-create sequence seq_sojg_institucion start with 1 increment by 1;
-create sequence seq_sojg_autor start with 1 increment by 1;
+-- Secuencias PAIS 
+create sequence sojg_seq_pais start with 1 increment by 1;
 
--- 3. Definición de tablas
+-- Secuencias CIUDAD
+create sequence sojg_seq_ciudad start with 1 increment by 1;
+
+-- Secuencias INSTITUCION
+create sequence sojg_seq_institucion start with 1 increment by 1;
+
+-- Secuencias AUTOR 
+create sequence sojg_seq_autor start with 1 increment by 1;
+
+-- Tabla PAIS
 create table sojg_pais (
-    id number default seq_sojg_pais.nextval,
+    id number default sojg_seq_pais.nextval,
     nombre varchar2(50) not null,
     moneda varchar2(10) not null,
     continente varchar2(20) not null,
-    constraint pk_sojg_pais primary key (id),
-    constraint uq_sojg_pais_nombre unique (nombre),
-    constraint chk_sojg_pais_continente check (continente in ('Europa', 'Asia', 'America', 'Africa', 'Oceania'))
+    
+    constraint sojg_pk_pais primary key (id),
+    constraint sojg_uq_pais_nombre unique (nombre),
+    constraint sojg_chk_pais_continente check (continente in ('Europa', 'Asia', 'America', 'Africa', 'Oceania'))
 );
 
+-- Tabla CIUDAD
 create table sojg_ciudad (
-    id number default seq_sojg_ciudad.nextval,
+    id number default sojg_seq_ciudad.nextval,
     nombre varchar2(50) not null,
     id_pais number not null,
-    constraint pk_sojg_ciudad primary key (id),
-    constraint fk_sojg_ciudad_pais foreign key (id_pais) references sojg_pais(id)
+    
+    constraint sojg_pk_ciudad primary key (id),
+    constraint sojg_fk_ciudad_pais foreign key (id_pais) references sojg_pais(id)
 );
 
+-- Tabla INSTITUCION
 create table sojg_institucion (
-    id number default seq_sojg_institucion.nextval,
+    id number default sojg_seq_institucion.nextval,
     nombre varchar2(100) not null,
     tipo varchar2(50) not null,
     id_ciudad number not null,
-    constraint pk_sojg_institucion primary key (id),
-    constraint uq_sojg_institucion_nombre unique (nombre),
-    constraint fk_sojg_inst_ciudad foreign key (id_ciudad) references sojg_ciudad(id),
-    constraint chk_sojg_inst_tipo check (tipo in ('Universidad','Colegio','Biblioteca','Escuela','Otro'))
+    
+    constraint sojg_pk_institucion primary key (id),
+    constraint sojg_uq_institucion_nombre unique (nombre),
+    constraint sojg_fk_inst_ciudad foreign key (id_ciudad) references sojg_ciudad(id),
+    constraint sojg_chk_inst_tipo check (tipo in ('Universidad','Colegio','Biblioteca','Escuela','Otro'))
 );
 
+-- Tabla AUTOR
 create table sojg_autor (
-    id_autor number default seq_sojg_autor.nextval,
+    id_autor number default sojg_seq_autor.nextval,
     nombre varchar2(50) not null,
     apellido varchar2(50) not null,
     "2do_nombre" varchar2(50),
     "2do_apellido" varchar2(50),
     nombre_artistico varchar2(50),
-    constraint pk_sojg_autor primary key (id_autor)
+    
+    constraint sojg_pk_autor primary key (id_autor)
 );
 
+-- Tabla LIBRO
 create table sojg_libro (
     isbn number,
     titulo varchar2(100) not null,
@@ -69,6 +88,7 @@ create table sojg_libro (
     primera_edicion char(2) not null,
     id_pais_publicacion number not null,
     isbn_continua_en number,
+    
     constraint pk_sojg_libro primary key (isbn),
     constraint fk_sojg_libro_pais foreign key (id_pais_publicacion) references sojg_pais(id),
     constraint fk_sojg_libro_rec foreign key (isbn_continua_en) references sojg_libro(isbn),
@@ -78,15 +98,19 @@ create table sojg_libro (
     constraint chk_sojg_libro_edic check (primera_edicion in ('SI','NO'))
 );
 
+-- Tabla AUTOR_LIBRO
 create table sojg_autor_libro (
     id_autor number not null,
     isbn_libro number not null,
+    
     constraint pk_sojg_autor_libro primary key (id_autor, isbn_libro),
     constraint fk_sojg_al_autor foreign key (id_autor) references sojg_autor(id_autor),
     constraint fk_sojg_al_libro foreign key (isbn_libro) references sojg_libro(isbn)
 );
 
--- 4. Inserción de datos
+-- ==========================================
+-- Inserts PAIS (11 registros)
+-- ==========================================
 insert into sojg_pais (nombre, moneda, continente) values ('España', 'EUR', 'Europa');
 insert into sojg_pais (nombre, moneda, continente) values ('Francia', 'EUR', 'Europa');
 insert into sojg_pais (nombre, moneda, continente) values ('Reino Unido', 'GBP', 'Europa');
@@ -99,6 +123,11 @@ insert into sojg_pais (nombre, moneda, continente) values ('Venezuela', 'VES', '
 insert into sojg_pais (nombre, moneda, continente) values ('Mexico', 'MXN', 'America');
 insert into sojg_pais (nombre, moneda, continente) values ('Colombia', 'COP', 'America');
 
+commit;
+
+-- ==========================================
+-- Inserts CIUDAD (8 registros)
+-- ==========================================
 insert into sojg_ciudad (nombre, id_pais) values ('Madrid', 1);
 insert into sojg_ciudad (nombre, id_pais) values ('Paris', 2);
 insert into sojg_ciudad (nombre, id_pais) values ('Londres', 3);
@@ -108,6 +137,11 @@ insert into sojg_ciudad (nombre, id_pais) values ('Ciudad de Mexico', 10);
 insert into sojg_ciudad (nombre, id_pais) values ('Bogota', 11);
 insert into sojg_ciudad (nombre, id_pais) values ('Portland', 6);
 
+commit;
+
+-- ==========================================
+-- Inserts INSTITUCION (8 registros)
+-- ==========================================
 insert into sojg_institucion (nombre, tipo, id_ciudad) values ('Biblioteca Los Palos Grandes', 'Biblioteca', 5);
 insert into sojg_institucion (nombre, tipo, id_ciudad) values ('Biblioteca Nacional de España', 'Biblioteca', 1);
 insert into sojg_institucion (nombre, tipo, id_ciudad) values ('Strand Book Store', 'Otro', 4);
@@ -117,6 +151,11 @@ insert into sojg_institucion (nombre, tipo, id_ciudad) values ('Biblioteca Luis 
 insert into sojg_institucion (nombre, tipo, id_ciudad) values ('Shakespeare and Company', 'Otro', 2);
 insert into sojg_institucion (nombre, tipo, id_ciudad) values ('Biblioteca Vasconcelos', 'Biblioteca', 6);
 
+commit;
+
+-- ==========================================
+-- Inserts AUTOR (16 registros)
+-- ==========================================
 insert into sojg_autor (nombre, apellido) values ('Miguel', 'de Cervantes');
 insert into sojg_autor (nombre, apellido) values ('Victor', 'Hugo');
 insert into sojg_autor (nombre, apellido) values ('Charles', 'Dickens');
@@ -134,6 +173,11 @@ insert into sojg_autor (nombre, apellido) values ('Albert', 'Camus');
 insert into sojg_autor (nombre, apellido) values ('John', 'Steinbeck');
 insert into sojg_autor (nombre, apellido) values ('Jane', 'Austen');
 
+commit;
+
+-- ==========================================
+-- Inserts LIBRO (16 registros)
+-- ==========================================
 insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978001, 'Don Quijote de la Mancha', 863, 'Español', 1605, 'Aventuras de un hidalgo y su escudero.', 'Caballeria', 'Novela', 'SI', 1);
 insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
@@ -167,6 +211,11 @@ values (978015, 'De ratones y hombres', 110, 'Ingles', 1937, 'Dos trabajadores r
 insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978016, 'Orgullo y prejuicio', 430, 'Ingles', 1813, 'La relacion entre Elizabeth Bennet y Mr. Darcy.', 'Romance', 'Novela', 'SI', 3);
 
+commit;
+
+-- ==========================================
+-- Inserts AUTOR_LIBRO (16 registros)
+-- ==========================================
 insert into sojg_autor_libro (id_autor, isbn_libro) values (1, 978001);
 insert into sojg_autor_libro (id_autor, isbn_libro) values (2, 978002);
 insert into sojg_autor_libro (id_autor, isbn_libro) values (3, 978003);
@@ -186,7 +235,10 @@ insert into sojg_autor_libro (id_autor, isbn_libro) values (16, 978016);
 
 commit;
 
--- 5. Función almacenada
+-- ==========================================
+-- Funcion: recibe el monto a convertir, la
+-- tasa y la moneda
+-- ==========================================
 create or replace function sojg_conversion_monetaria (
     p_monto in number,
     p_moneda_origen in varchar2
@@ -213,8 +265,15 @@ begin
 end;
 /
 
--- 6. Creación de la vista de prueba
-create or replace view v_sojg_prueba_conversion as
+-- ==========================================
+-- Vista 1: informacion de pais con 
+-- conversion de 100 unidades de moneda local
+-- en dolares americanos
+-- uso 1: select * from sojg_v_prueba_conversion;
+-- uso 2: select * from sojg_v_prueba_conversion
+--            where id_miembro = 1;
+-- ==========================================
+create or replace view sojg_v_prueba_conversion as
 select
     id as pais_id,
     nombre as pais_nombre,
