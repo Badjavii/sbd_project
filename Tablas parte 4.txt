@@ -1,124 +1,399 @@
-create table PROYECTO_LUCIA.HISTORICO_GRUPO_LECTURA
+-- secuencias 
+
+create sequence PROYECTO_LUCIA."seq_grupo_de_lectura"
+/
+
+create sequence PROYECTO_LUCIA."seq_pago_membresia"
+/
+
+-- tablas parte 4
+
+create table PROYECTO_LUCIA."sojg_grupo_de_lectura"
 (
-    ID_CLUB         NUMBER not null,
-    NUMERO_DE_GRUPO NUMBER not null,
-    ID_MIEMBRO      NUMBER not null,
-    FECHA_INICIO    DATE   not null,
-    FECHA_FIN       DATE,
-    constraint PK_HIST_GRUPO_LECTURA
-        primary key (ID_CLUB, NUMERO_DE_GRUPO, ID_MIEMBRO, FECHA_INICIO)
+    "id_club"           NUMBER       not null
+        constraint "fk_sojg_grup_club"
+            references PROYECTO_LUCIA."sojg_club",
+    "numero_de_grupo"   NUMBER       not null,
+    "fecha_de_creacion" DATE         not null,
+    "categoria_edad"    VARCHAR2(10) not null
+        constraint "chk_sojg_grup_edad"
+            check ("categoria_edad" in ('Adulto', 'Joven', 'Nino')),
+    "dia_reunion"       VARCHAR2(15) not null
+        constraint "chk_sojg_grup_dia"
+            check ("dia_reunion" in ('Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes')),
+    "hora_inicio"       NUMBER(4, 2) not null
+        constraint "chk_sojg_grup_hora"
+            check ("hora_inicio" between 17 and 19),
+    constraint "pk_sojg_grupo_lectura"
+        primary key ("id_club", "numero_de_grupo")
 )
 /
 
-create table PROYECTO_LUCIA.GRUPO_DE_LECTURA
+create table PROYECTO_LUCIA."sojg_historico_grupo_lectura"
 (
-    ID_CLUB           NUMBER       not null,
-    NUMERO_DE_GRUPO   NUMBER       not null,
-    FECHA_DE_CREACION DATE         not null,
-    CATEGORIA_EDAD    VARCHAR2(10) not null
-        constraint CHK_GL_CATEGORIA_EDAD
-            check (categoria_edad IN ('Adulto', 'Joven', 'Nino')),
-    DIA_REUNION       VARCHAR2(15) not null
-        constraint CHK_GL_DIA_REUNION
-            check (dia_reunion IN ('Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes')),
-    HORA_INICIO       NUMBER(4, 2) not null
-        constraint CHK_GL_HORA_INICIO
-            check (hora_inicio BETWEEN 17 AND 19),
-    constraint PK_GRUPO_DE_LECTURA
-        primary key (ID_CLUB, NUMERO_DE_GRUPO)
+    "id_club"                NUMBER not null,
+    "numero_de_grupo"        NUMBER not null,
+    "fecha_inicio_membresia" DATE   not null,
+    "id_miembro"             NUMBER not null,
+    "fecha_inicio"           DATE   not null,
+    "fecha_fin"              DATE,
+    constraint "pk_sojg_historico_grupo_lectura"
+        primary key ("id_club", "numero_de_grupo", "fecha_inicio_membresia", "id_miembro", "fecha_inicio"),
+    constraint "fk_sojg_hgru_grup"
+        foreign key ("id_club", "numero_de_grupo") references PROYECTO_LUCIA."sojg_grupo_de_lectura",
+    constraint "fk_sojg_hgru_hist_membresia"
+        foreign key ("id_miembro", "id_club", "fecha_inicio_membresia") references PROYECTO_LUCIA."sojg_historico_membresia"
 )
 /
 
-create table PROYECTO_LUCIA.HISTORICO_MEMBRESIA
+create table PROYECTO_LUCIA."sojg_historico_membresia"
 (
-    ID_MIEMBRO    NUMBER       not null,
-    ID_CLUB       NUMBER       not null,
-    FECHA_INICIO  DATE         not null,
-    FECHA_FIN     DATE,
-    ESTATUS       VARCHAR2(20) not null
-        constraint CHK_HM_ESTATUS
-            check (estatus IN ('Activa', 'Inactiva', 'Retirada', 'Morosa', 'Expulsada')),
-    MOTIVO_RETIRO VARCHAR2(20)
-        constraint CHK_HM_MOTIVO_RETIRO
-            check (motivo_retiro IN ('Voluntario', 'Inasistencia', 'Deudas', 'Otro')),
-    constraint PK_HISTORICO_MEMBRESIA
-        primary key (ID_MIEMBRO, ID_CLUB, FECHA_INICIO)
+    "id_miembro"             NUMBER       not null
+        constraint "fk_sojg_hmem_miembro"
+            references PROYECTO_LUCIA."sojg_lector",
+    "id_club"                NUMBER       not null
+        constraint "fk_sojg_hmem_club"
+            references PROYECTO_LUCIA."sojg_club",
+    "fecha_inicio_membresia" DATE         not null,
+    "fecha_fin"              DATE,
+    "estatus"                VARCHAR2(20) not null
+        constraint "chk_sojg_hmem_estatus"
+            check ("estatus" in ('Activa', 'Inactiva', 'Retirada', 'Morosa', 'Expulsada')),
+    "motivo_retiro"          VARCHAR2(20)
+        constraint "chk_sojg_hmem_motivo"
+            check ("motivo_retiro" in ('Voluntario', 'Inasistencia', 'Deudas', 'Otro')),
+    constraint "pk_sojg_historico_membresia"
+        primary key ("id_miembro", "id_club", "fecha_inicio_membresia")
 )
 /
 
-create table PROYECTO_LUCIA.PAGO_MEMBRESIA
+create table PROYECTO_LUCIA."sojg_pago_membresia"
 (
-    ID         NUMBER        not null
-        constraint PK_PAGO_MEMBRESIA
+    "id"         NUMBER        not null
+        constraint "pk_sojg_pago_membresia"
             primary key,
-    FECHA      DATE          not null,
-    MONTO      NUMBER(10, 2) not null
-        constraint CHK_PM_MONTO
-            check (monto > 0),
-    ID_MIEMBRO NUMBER        not null,
-    ID_CLUB    NUMBER        not null
+    "fecha"      DATE          not null,
+    "monto"      NUMBER(10, 2) not null
+        constraint "chk_sojg_pago_monto"
+            check ("monto" > 0),
+    "id_miembro" NUMBER        not null
+        constraint "fk_sojg_pago_miembro"
+            references PROYECTO_LUCIA."sojg_lector",
+    "id_club"    NUMBER        not null
+        constraint "fk_sojg_pago_club"
+            references PROYECTO_LUCIA."sojg_club"
 )
 /
 
-create table PROYECTO_LUCIA.CALENDARIO_MES
+create table PROYECTO_LUCIA."sojg_inasistencia"
 (
-    ID_CLUB          NUMBER  not null,
-    NUMERO_DE_GRUPO  NUMBER  not null,
-    ISBN_LIBRO       NUMBER  not null,
-    FECHA_REUNION    DATE    not null,
-    REALIZADA        CHAR(2) not null
-        constraint CHK_CM_REALIZADA
-            check (realizada IN ('SI', 'NO')),
-    CONCLUSIONES     CLOB,
-    VALORACION_FINAL NUMBER(2, 1)
-        constraint CHK_CM_VALORACION
-            check (valoracion_final BETWEEN 1 AND 5),
-    ULTIMA_DISCUSION CHAR(2)
-        constraint CHK_CM_ULTIMA_DISCUSION
-            check (ultima_discusion IN ('SI', 'NO')),
-    ID_MODERADOR     NUMBER  not null,
-    constraint PK_CALENDARIO_MES
-        primary key (ID_CLUB, NUMERO_DE_GRUPO, ISBN_LIBRO, FECHA_REUNION)
+    "id_club"         NUMBER not null,
+    "numero_de_grupo" NUMBER not null,
+    "isbn_libro"      NUMBER not null,
+    "fecha_reunion"   DATE   not null,
+    "id_miembro"      NUMBER not null
+        constraint "fk_sojg_inas_miembro"
+            references PROYECTO_LUCIA."sojg_lector",
+    constraint "pk_sojg_inasistencia"
+        primary key ("id_club", "numero_de_grupo", "isbn_libro", "fecha_reunion", "id_miembro"),
+    constraint "fk_sojg_inas_cal"
+        foreign key ("id_club", "numero_de_grupo", "isbn_libro", "fecha_reunion") references PROYECTO_LUCIA."sojg_calendario_mes"
 )
 /
 
-create table PROYECTO_LUCIA.INASISTENCIA
+create table PROYECTO_LUCIA."sojg_calendario_mes"
 (
-    ID_CLUB         NUMBER not null,
-    NUMERO_DE_GRUPO NUMBER not null,
-    ISBN_LIBRO      NUMBER not null,
-    FECHA_REUNION   DATE   not null,
-    ID_MIEMBRO      NUMBER not null,
-    constraint PK_INASISTENCIA
-        primary key (ID_CLUB, NUMERO_DE_GRUPO, ISBN_LIBRO, FECHA_REUNION, ID_MIEMBRO)
+    "id_club"           NUMBER  not null,
+    "numero_de_grupo"   NUMBER  not null,
+    "isbn_libro"        NUMBER  not null
+        constraint "fk_sojg_cal_libro"
+            references PROYECTO_LUCIA."sojg_libro",
+    "fecha_reunion"     DATE    not null,
+    "realizada"         CHAR(2) not null
+        constraint "chk_sojg_cal_realizada"
+            check ("realizada" in ('SI', 'NO')),
+    "conclusiones"      CLOB,
+    "valoracion_final"  NUMBER(2, 1)
+        constraint "chk_sojg_cal_val"
+            check ("valoracion_final" between 1 and 5),
+    "ultima_discussion" CHAR(2)
+        constraint "chk_sojg_cal_ult"
+            check ("ultima_discussion" in ('SI', 'NO')),
+    "id_moderador"      NUMBER  not null
+        constraint "fk_sojg_cal_mod"
+            references PROYECTO_LUCIA."sojg_lector",
+    constraint "pk_sojg_calendario"
+        primary key ("id_club", "numero_de_grupo", "isbn_libro", "fecha_reunion"),
+    constraint "fk_sojg_cal_grupo"
+        foreign key ("id_club", "numero_de_grupo") references PROYECTO_LUCIA."sojg_grupo_de_lectura"
 )
 /
 
-create table PROYECTO_LUCIA.PRESENTACION_DE_LA_OBRA
+create table PROYECTO_LUCIA."sojg_presentacion_de_la_obra"
 (
-    ID_OBRA             NUMBER       not null,
-    FECHA               DATE         not null,
-    VALORACION          NUMBER(2, 1) not null
-        constraint CHK_PO_VALORACION
-            check (valoracion BETWEEN 1 AND 5),
-    CANTIDAD_ASISTENTES NUMBER       not null
-        constraint CHK_PO_ASISTENTES
-            check (cantidad_asistentes > 0),
-    constraint PK_PRESENTACION_DE_LA_OBRA
-        primary key (ID_OBRA, FECHA)
+    "id_obra"             NUMBER       not null
+        constraint "fk_sojg_pres_obra"
+            references PROYECTO_LUCIA."sojg_obra",
+    "fecha"               DATE         not null,
+    "valoracion"          NUMBER(2, 1) not null
+        constraint "chk_sojg_pres_val"
+            check ("valoracion" between 1 and 5),
+    "cantidad_asistentes" NUMBER       not null
+        constraint "chk_sojg_pres_asist"
+            check ("cantidad_asistentes" > 0),
+    constraint "pk_sojg_presentacion"
+        primary key ("id_obra", "fecha")
 )
 /
 
-create table PROYECTO_LUCIA.MEJOR_ACTOR
+create table PROYECTO_LUCIA."sojg_mejor_actor"
 (
-    ID_OBRA            NUMBER not null,
-    ID_MIEMBRO         NUMBER not null,
-    FECHA_PRESENTACION DATE   not null,
-    VOTOS              NUMBER not null
-        constraint CHK_MA_VOTOS
-            check (votos > 0),
-    constraint PK_MEJOR_ACTOR
-        primary key (ID_OBRA, ID_MIEMBRO, FECHA_PRESENTACION)
+    "id_obra"            NUMBER not null,
+    "id_miembro"         NUMBER not null,
+    "fecha_presentacion" DATE   not null,
+    "votos"              NUMBER not null
+        constraint "chk_sojg_mact_votos"
+            check ("votos" > 0),
+    constraint "pk_sojg_mejor_actor"
+        primary key ("id_obra", "id_miembro", "fecha_presentacion"),
+    constraint "fk_sojg_mact_elenco"
+        foreign key ("id_obra", "id_miembro") references PROYECTO_LUCIA."sojg_elenco",
+    constraint "fk_sojg_mact_pres"
+        foreign key ("id_obra", "fecha_presentacion") references PROYECTO_LUCIA."sojg_presentacion_de_la_obra"
 )
 /
+
+-- rutinas
+
+create function "pct_prom_participacion_mensual"(
+    p_id_club in number,
+    p_mes     in number,
+    p_anno    in number
+) return varchar2 is
+    v_pct_adulto number := 0;
+    v_pct_joven  number := 0;
+    v_pct_nino   number := 0;
+    v_esperados  number;
+    v_faltas     number;
+    v_resultado  varchar2(200);
+begin
+    --- 1. CATEGORÍA: Adulto
+    select nvl(sum(
+                       (select count(*)
+                        from "sojg_historico_grupo_lectura" hg
+                        where hg."id_club" = cm."id_club"
+                          and hg."numero_de_grupo" = cm."numero_de_grupo"
+                          and hg."fecha_inicio_membresia" <= cm."fecha_reunion"
+                          and (hg."fecha_fin" is null or hg."fecha_fin" >= cm."fecha_reunion"))
+               ), 0)
+    into v_esperados
+    from "sojg_calendario_mes" cm
+             join "sojg_grupo_de_lectura" gl on cm."id_club" = gl."id_club" and cm."numero_de_grupo" = gl."numero_de_grupo"
+    where cm."id_club" = p_id_club
+      and extract(month from cm."fecha_reunion") = p_mes
+      and extract(year from cm."fecha_reunion") = p_anno
+      and gl."categoria_edad" = 'Adulto'
+      and cm."realizada" = 'SI';
+
+    if v_esperados > 0 then
+        select count(*) into v_faltas
+        from "sojg_inasistencia" i
+                 join "sojg_calendario_mes" cm on i."id_club" = cm."id_club" and i."numero_de_grupo" = cm."numero_de_grupo" and i."isbn_libro" = cm."isbn_libro" and i."fecha_reunion" = cm."fecha_reunion"
+                 join "sojg_grupo_de_lectura" gl on cm."id_club" = gl."id_club" and cm."numero_de_grupo" = gl."numero_de_grupo"
+        where cm."id_club" = p_id_club
+          and extract(month from cm."fecha_reunion") = p_mes
+          and extract(year from cm."fecha_reunion") = p_anno
+          and gl."categoria_edad" = 'Adulto'
+          and cm."realizada" = 'SI';
+
+        v_pct_adulto := round(100 - ((v_faltas / v_esperados) * 100), 2);
+    end if;
+
+    --- 2. CATEGORÍA: Joven
+    select nvl(sum(
+                       (select count(*)
+                        from "sojg_historico_grupo_lectura" hg
+                        where hg."id_club" = cm."id_club"
+                          and hg."numero_de_grupo" = cm."numero_de_grupo"
+                          and hg."fecha_inicio_membresia" <= cm."fecha_reunion"
+                          and (hg."fecha_fin" is null or hg."fecha_fin" >= cm."fecha_reunion"))
+               ), 0)
+    into v_esperados
+    from "sojg_calendario_mes" cm
+             join "sojg_grupo_de_lectura" gl on cm."id_club" = gl."id_club" and cm."numero_de_grupo" = gl."numero_de_grupo"
+    where cm."id_club" = p_id_club
+      and extract(month from cm."fecha_reunion") = p_mes
+      and extract(year from cm."fecha_reunion") = p_anno
+      and gl."categoria_edad" = 'Joven'
+      and cm."realizada" = 'SI';
+
+    if v_esperados > 0 then
+        select count(*) into v_faltas
+        from "sojg_inasistencia" i
+                 join "sojg_calendario_mes" cm on i."id_club" = cm."id_club" and i."numero_de_grupo" = cm."numero_de_grupo" and i."isbn_libro" = cm."isbn_libro" and i."fecha_reunion" = cm."fecha_reunion"
+                 join "sojg_grupo_de_lectura" gl on cm."id_club" = gl."id_club" and cm."numero_de_grupo" = gl."numero_de_grupo"
+        where cm."id_club" = p_id_club
+          and extract(month from cm."fecha_reunion") = p_mes
+          and extract(year from cm."fecha_reunion") = p_anno
+          and gl."categoria_edad" = 'Joven'
+          and cm."realizada" = 'SI';
+
+        v_pct_joven := round(100 - ((v_faltas / v_esperados) * 100), 2);
+    end if;
+
+    --- 3. CATEGORÍA: Nino
+    select nvl(sum(
+                       (select count(*)
+                        from "sojg_historico_grupo_lectura" hg
+                        where hg."id_club" = cm."id_club"
+                          and hg."numero_de_grupo" = cm."numero_de_grupo"
+                          and hg."fecha_inicio_membresia" <= cm."fecha_reunion"
+                          and (hg."fecha_fin" is null or hg."fecha_fin" >= cm."fecha_reunion"))
+               ), 0)
+    into v_esperados
+    from "sojg_calendario_mes" cm
+             join "sojg_grupo_de_lectura" gl on cm."id_club" = gl."id_club" and cm."numero_de_grupo" = gl."numero_de_grupo"
+    where cm."id_club" = p_id_club
+      and extract(month from cm."fecha_reunion") = p_mes
+      and extract(year from cm."fecha_reunion") = p_anno
+      and gl."categoria_edad" = 'Nino'
+      and cm."realizada" = 'SI';
+
+    if v_esperados > 0 then
+        select count(*) into v_faltas
+        from "sojg_inasistencia" i
+                 join "sojg_calendario_mes" cm on i."id_club" = cm."id_club" and i."numero_de_grupo" = cm."numero_de_grupo" and i."isbn_libro" = cm."isbn_libro" and i."fecha_reunion" = cm."fecha_reunion"
+                 join "sojg_grupo_de_lectura" gl on cm."id_club" = gl."id_club" and cm."numero_de_grupo" = gl."numero_de_grupo"
+        where cm."id_club" = p_id_club
+          and extract(month from cm."fecha_reunion") = p_mes
+          and extract(year from cm."fecha_reunion") = p_anno
+          and gl."categoria_edad" = 'Nino'
+          and cm."realizada" = 'SI';
+
+        v_pct_nino := round(100 - ((v_faltas / v_esperados) * 100), 2);
+    end if;
+
+    v_resultado := 'Adulto: ' || to_char(v_pct_adulto, '990.99') || '% | ' ||
+                   'Joven: '  || to_char(v_pct_joven,  '990.99') || '% | ' ||
+                   'Niño: '   || to_char(v_pct_nino,   '990.99') || '%';
+
+    return v_resultado;
+exception
+    when others then
+        return 'Error al procesar la participación mensual.';
+end "pct_prom_participacion_mensual";
+/
+
+-- vistas
+
+create view PROYECTO_LUCIA."sojg_vw_calendario_detallado" as
+select
+    c."nombre"         as "club_nombre",
+    gl."numero_de_grupo" as "grupo_nro",
+    gl."categoria_edad"  as "categoria",
+    l."titulo"          as "libro_titulo",
+    cm."fecha_reunion"  as "fecha",
+    gl."dia_reunion"    as "dia_semana",
+    gl."hora_inicio"    as "hora",
+    cm."realizada"      as "ejecutada"
+from "sojg_calendario_mes" cm
+         join "sojg_club" c             on cm."id_club" = c."id_club"
+         join "sojg_grupo_de_lectura" gl on cm."id_club" = gl."id_club" and cm."numero_de_grupo" = gl."numero_de_grupo"
+         join "sojg_libro" l            on cm."isbn_libro" = l."isbn"
+/
+
+--vistas
+
+create view PROYECTO_LUCIA."sojg_vw_calendario_detallado" as
+select
+    c."nombre"         as "club_nombre",
+    gl."numero_de_grupo" as "grupo_nro",
+    gl."categoria_edad"  as "categoria",
+    l."titulo"          as "libro_titulo",
+    cm."fecha_reunion"  as "fecha",
+    gl."dia_reunion"    as "dia_semana",
+    gl."hora_inicio"    as "hora",
+    cm."realizada"      as "ejecutada"
+from "sojg_calendario_mes" cm
+         join "sojg_club" c             on cm."id_club" = c."id_club"
+         join "sojg_grupo_de_lectura" gl on cm."id_club" = gl."id_club" and cm."numero_de_grupo" = gl."numero_de_grupo"
+         join "sojg_libro" l            on cm."isbn_libro" = l."isbn"
+/
+
+create view PROYECTO_LUCIA."sojg_vw_historico_lecturas" as
+select
+    c."nombre"         as "club_nombre",
+    cm."fecha_reunion"  as "fecha_evaluacion",
+    l."titulo"          as "libro_leido",
+    cm."valoracion_final" as "nota_libro",
+    cm."conclusiones"     as "minuta_reunion"
+from "sojg_calendario_mes" cm
+         join "sojg_club" c  on cm."id_club" = c."id_club"
+         join "sojg_libro" l on cm."isbn_libro" = l."isbn"
+where cm."realizada" = 'SI'
+/
+
+create view PROYECTO_LUCIA."sojg_vw_moderadores_reunion" as
+select
+    c."nombre"         as "club_nombre",
+    cm."fecha_reunion"  as "fecha_reunion",
+    l."titulo"          as "libro_discutido",
+    m."nombre" || ' ' || m."apellido" as "nombre_moderador",
+    m."correo_electronico"            as "correo_moderador"
+from "sojg_calendario_mes" cm
+         join "sojg_club" c       on cm."id_club" = c."id_club"
+         join "sojg_libro" l      on cm."isbn_libro" = l."isbn"
+         join "sojg_lector" m     on cm."id_moderador" = m."id_miembro"
+/
+
+-- inserts 
+--- ===========================================================================
+--- INSERCIÓN DE GRUPOS DE LECTURA (CLUBES DEL 1 AL 8)
+--- ===========================================================================
+
+-- Grupos para el Club ID = 1
+insert into "sojg_grupo_de_lectura" ("id_club", "numero_de_grupo", "fecha_de_creacion", "categoria_edad", "dia_reunion", "hora_inicio")
+values (1, 101, to_date('2026-01-10', 'yyyy-mm-dd'), 'Adulto', 'Lunes', 18.00);
+insert into "sojg_grupo_de_lectura" ("id_club", "numero_de_grupo", "fecha_de_creacion", "categoria_edad", "dia_reunion", "hora_inicio")
+values (1, 102, to_date('2026-01-12', 'yyyy-mm-dd'), 'Nino', 'Miércoles', 17.15);
+
+-- Grupos para el Club ID = 2
+insert into "sojg_grupo_de_lectura" ("id_club", "numero_de_grupo", "fecha_de_creacion", "categoria_edad", "dia_reunion", "hora_inicio")
+values (2, 201, to_date('2026-01-15', 'yyyy-mm-dd'), 'Joven', 'Martes', 17.30);
+insert into "sojg_grupo_de_lectura" ("id_club", "numero_de_grupo", "fecha_de_creacion", "categoria_edad", "dia_reunion", "hora_inicio")
+values (2, 202, to_date('2026-01-15', 'yyyy-mm-dd'), 'Adulto', 'Jueves', 19.00);
+
+-- Grupos para el Club ID = 3
+insert into "sojg_grupo_de_lectura" ("id_club", "numero_de_grupo", "fecha_de_creacion", "categoria_edad", "dia_reunion", "hora_inicio")
+values (3, 301, to_date('2026-02-01', 'yyyy-mm-dd'), 'Adulto', 'Viernes', 18.30);
+
+-- Grupos para el Club ID = 4
+insert into "sojg_grupo_de_lectura" ("id_club", "numero_de_grupo", "fecha_de_creacion", "categoria_edad", "dia_reunion", "hora_inicio")
+values (4, 401, to_date('2026-02-10', 'yyyy-mm-dd'), 'Adulto', 'Martes', 18.50);
+insert into "sojg_grupo_de_lectura" ("id_club", "numero_de_grupo", "fecha_de_creacion", "categoria_edad", "dia_reunion", "hora_inicio")
+values (4, 402, to_date('2026-02-12', 'yyyy-mm-dd'), 'Nino', 'Jueves', 17.00);
+
+-- Grupos para el Club ID = 5
+insert into "sojg_grupo_de_lectura" ("id_club", "numero_de_grupo", "fecha_de_creacion", "categoria_edad", "dia_reunion", "hora_inicio")
+values (5, 501, to_date('2026-02-20', 'yyyy-mm-dd'), 'Joven', 'Lunes', 17.45);
+
+-- Grupos para el Club ID = 6
+insert into "sojg_grupo_de_lectura" ("id_club", "numero_de_grupo", "fecha_de_creacion", "categoria_edad", "dia_reunion", "hora_inicio")
+values (6, 601, to_date('2026-03-01', 'yyyy-mm-dd'), 'Joven', 'Viernes', 17.30);
+insert into "sojg_grupo_de_lectura" ("id_club", "numero_de_grupo", "fecha_de_creacion", "categoria_edad", "dia_reunion", "hora_inicio")
+values (6, 602, to_date('2026-03-05', 'yyyy-mm-dd'), 'Adulto', 'Lunes', 19.00);
+
+-- Grupos para el Club ID = 7
+insert into "sojg_grupo_de_lectura" ("id_club", "numero_de_grupo", "fecha_de_creacion", "categoria_edad", "dia_reunion", "hora_inicio")
+values (7, 701, to_date('2026-03-15', 'yyyy-mm-dd'), 'Adulto', 'Miércoles', 18.00);
+
+-- Grupos para el Club ID = 8
+insert into "sojg_grupo_de_lectura" ("id_club", "numero_de_grupo", "fecha_de_creacion", "categoria_edad", "dia_reunion", "hora_inicio")
+values (8, 801, to_date('2026-03-22', 'yyyy-mm-dd'), 'Nino', 'Martes', 17.00);
+
+commit;
+/
+
+
+
 
