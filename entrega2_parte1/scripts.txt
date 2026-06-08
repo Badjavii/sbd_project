@@ -1,0 +1,130 @@
+-- ! ||--------------------------------------------------------------------------------||
+-- ! ||                                   secuencias                                   ||
+-- ! ||--------------------------------------------------------------------------------||
+
+CREATE SEQUENCE sojg_seq_club START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE sojg_seq_obra START WITH 1 INCREMENT BY 1;
+
+-- ! ||--------------------------------------------------------------------------------||
+-- ! ||                                     tablas                                     ||
+-- ! ||--------------------------------------------------------------------------------||
+
+CREATE TABLE sojg_club (
+  id_club number DEFAULT sojg_seq_club.nextval NOT NULL,
+  nombre varchar2(200) NOT NULL UNIQUE,
+  direccion varchar2(300) NOT NULL,
+  codigo_postal varchar2(20) NOT NULL,
+  idioma_del_club varchar2(100) NOT NULL,
+  id_ciudad number NOT NULL REFERENCES sojg_ciudad(id),
+  cuota_membresia char(2) CONSTRAINT sojg_check_cuota CHECK (cuota_membresia IN ('SI', 'NO')),
+  id_institucion NUMBER REFERENCES sojg_institucion(id),
+
+  CONSTRAINT sojg_pk_club PRIMARY KEY (id_club)
+)
+
+CREATE TABLE sojg_asociacion (
+  id_club_1 number NOT NULL REFERENCES sojg_club(id_club),
+  id_club_2 number NOT NULL REFERENCES sojg_club(id_club),
+  fecha_asociacion date NOT NULL,
+  CONSTRAINT sojg_pk_asociacion PRIMARY KEY (id_club_1, id_club_2),
+  CONSTRAINT sojg_check_self_asociacion CHECK (id_club_1 != id_club_2),
+  CONSTRAINT sojg_check_duplicate_asociacion CHECK (id_club_1 < id_club_2),
+  CONSTRAINT sojg_check_idioma_asociacion CHECK (id_club_1.idioma_del_club = id_club_2.idioma_del_club)
+)
+
+CREATE TABLE sojg_obra(
+  id_obra number DEFAULT sojg_seq_obra.nextval NOT NULL,
+  titulo_de_obra varchar2(300) NOT NULL,
+  activa char(2) NOT NULL CONSTRAINT sojg_check_activa CHECK (activa IN ('SI', 'NO')),
+  descripcion_de_la_obra clob,
+  costo_entrada number(10,2) CONSTRAINT sojg_check_costo CHECK (costo_entrada > 0),
+  id_club number NOT NULL REFERENCES sojg_club(id_club),
+
+  CONSTRAINT sojg_pk_obra PRIMARY KEY (id_obra)
+)
+
+CREATE TABLE sojg_libro_referenciado_por_la_obra (
+  id_obra number NOT NULL REFERENCES sojg_obra(id_obra),
+  id_libro number NOT NULL REFERENCES sojg_libro(ISBN),
+  CONSTRAINT sojg_pk_libro_referenciado PRIMARY KEY (id_obra, ISBN)
+)
+
+CREATE TABLE sojg_elenco (
+  id_obra number NOT NULL REFERENCES sojg_obra(id_obra),
+  id_miembro number NOT NULL REFERENCES sojg_lector(id_miembro),
+  CONSTRAINT sojg_pk_elenco PRIMARY KEY (id_obra, id_miembro)
+)
+
+-- ! ||--------------------------------------------------------------------------------||
+-- ! ||                                     inserts                                    ||
+-- ! ||--------------------------------------------------------------------------------||
+
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ("Club de Lectura de la Biblioteca Los Palos Grandes", 'Calle Los Palos Grandes, Caracas', '1060', 'Español', 1, 'SI', 1);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ("Club de Lectura de la Biblioteca Nacional de España", 'Paseo de Recoletos, Madrid', '28001', 'Español', 2, 'NO', 2);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ("Strand Book Store Book Clubs", '828 Broadway, New York', '10003', 'Inglés', 3, 'SI', 3);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ("Club de Lectura de la Librería El Péndulo", 'Av. Presidente Masaryk 111, Ciudad de México', '11560', 'Español', 4, 'NO', 4);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ("Powell's Book Clubs", '1005 W Burnside St, Portland', '97209', 'Inglés', 5, 'SI', 5);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ('Club de Lectores del Banco de la República-Biblioteca Luis Ángel Arango', 'Calle 11 #4-14, Bogotá', '11001', 'Español', 6, 'NO', 6);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ('Shakespeare and Company Reading Group', '37 Rue de la Bûcherie, Paris', '75005', 'Francés', 7, 'SI', 7);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ('Club de Lectura de la Biblioteca Vasconcelos', 'Av. Cuitláhuac 2000, Ciudad de México', '02000', 'Español', 8, 'NO', 8);
+
+-- ! ||--------------------------------------------------------------------------------||
+-- ! ||                                    funciones                                   ||
+-- ! ||--------------------------------------------------------------------------------||
+
+-- create table PROYECTO_LUCIA."sojg_historico_grupo_lectura"
+-- (
+--     "id_club"                NUMBER not null,
+--     "numero_de_grupo"        NUMBER not null,
+--     "fecha_inicio_membresia" DATE   not null,
+--     "id_miembro"             NUMBER not null,
+--     "fecha_inicio"           DATE   not null,
+--     "fecha_fin"              DATE,
+--     constraint "pk_sojg_historico_grupo_lectura"
+--         primary key ("id_club", "numero_de_grupo", "fecha_inicio_membresia", "id_miembro", "fecha_inicio"),
+--     constraint "fk_sojg_hgru_grup"
+--         foreign key ("id_club", "numero_de_grupo") references PROYECTO_LUCIA."sojg_grupo_de_lectura",
+--     constraint "fk_sojg_hgru_hist_membresia"
+--         foreign key ("id_miembro", "id_club", "fecha_inicio_membresia") references PROYECTO_LUCIA."sojg_historico_membresia"
+-- )
+
+
+CREATE OR REPLACE FUNCTION sojg_edad_miembro (miembro_id number) RETURN number IS
+  v_edad number;
+BEGIN
+  SELECT FLOOR(MONTHS_BETWEEN(TRUNC(SYSDATE), TRUNC(fecha_nacimiento)) / 12)
+  INTO v_edad
+  FROM sojg_lector
+  WHERE id_miembro = miembro_id;
+  
+  RETURN v_edad;
+END;
+
+CREATE OR REPLACE FUNCTION sojg_antiguedad_en_el_club_miembro(p_id_miembro number, p_id_club number) RETURN number IS v_antiguedad number;
+BEGIN
+  -- SELECT FLOOR(MONTHS_BETWEEN(TRUNC(SYSDATE), TRUNC(fecha_inicio)) / 12)
+  FOR rec IN (
+    SELECT fecha_inicio, fecha_fin
+    FROM sojg_historico_grupo_lectura
+    WHERE id_miembro = p_id_miembro AND id_club = p_id_club
+  ) LOOP
+    IF rec.fecha_fin IS NULL THEN
+      v_antiguedad := v_antiguedad + FLOOR(MONTHS_BETWEEN(TRUNC(SYSDATE), TRUNC(rec.fecha_inicio)) / 12);
+    ELSE
+      v_antiguedad := v_antiguedad + FLOOR(MONTHS_BETWEEN(TRUNC(rec.fecha_fin), TRUNC(rec.fecha_inicio)) / 12);
+    END IF;
+  END LOOP;
+  RETURN v_antiguedad;
+END;
+
+-- ! ||--------------------------------------------------------------------------------||
+-- ! ||                                      views                                     ||
+-- ! ||--------------------------------------------------------------------------------||
+
+CREATE OR REPLACE VIEW sojg_edades_miembros AS
+SELECT id_miembro, nombre, sojg_edad_miembro(id_miembro) AS edad
+FROM sojg_lector;
+
+CREATE OR REPLACE VIEW sojg_antiguedad_miembros_en_club AS
+SELECT h.id_miembro, h.id_club, sojg_antiguedad_en_el_club_miembro(h.id_miembro, h.id_club) AS antiguedad
+FROM sojg_historico_grupo_lectura h;
