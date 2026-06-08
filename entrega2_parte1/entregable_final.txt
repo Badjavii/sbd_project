@@ -1,0 +1,43 @@
+-- ==========================================
+-- FASE 1: SECUENCIAS
+-- ==========================================
+
+-- Secuencia PAIS 
+create sequence sojg_seq_pais start with 1 increment by 1;
+-- Secuencia INSTITUCION
+create sequence sojg_seq_institucion start with 1 increment by 1;
+-- Secuencia AUTOR 
+create sequence sojg_seq_autor start with 1 increment by 1;
+-- Secuencia REPRESENTANTE
+create sequence sojg_seq_representante start with 1 increment by 1;
+
+-- Secuencia CIUDAD
+create sequence sojg_seq_ciudad start with 1 increment by 1;
+-- Secuencias CLUB
+CREATE SEQUENCE sojg_seq_club START WITH 1 INCREMENT BY 1;
+-- Secuencia GRUPO_LECTURA
+create sequence sojg_seq_grupo_de_lectura with 1 increment by 1;
+-- Secuencia OBRA
+CREATE SEQUENCE sojg_seq_obra START WITH 1 INCREMENT BY 1;
+-- Secuencia LECTOR
+create sequence sojg_seq_lector start with 1 increment by 1;
+-- Secuencia PAGO_MEMBRESIA
+create sequence sojg_seq_pago_membresia start with 1 increment by 1;
+
+-- ==========================================
+-- FASE 2: TABLAS
+-- ==========================================
+
+
+
+-- ==========================================
+-- FASE 3: INSERTS
+-- ==========================================
+
+-- ==========================================
+-- FASE 4: FUNCIONES
+-- ==========================================
+
+-- ==========================================
+-- FASE 5: VISTAS 
+-- ==========================================
