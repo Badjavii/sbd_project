@@ -1,26 +1,23 @@
--- limpieza por si acaso NO USAR SOLO EN CASO DE QUERER BORRAR TODO  
+-- 1. Limpieza total (por si acaso quedaron restos)
 drop table sojg_autor_libro cascade constraints;
 drop table sojg_libro cascade constraints;
 drop table sojg_autor cascade constraints;
 drop table sojg_institucion cascade constraints;
 drop table sojg_ciudad cascade constraints;
 drop table sojg_pais cascade constraints;
-
 drop sequence seq_sojg_pais;
 drop sequence seq_sojg_ciudad;
 drop sequence seq_sojg_institucion;
 drop sequence seq_sojg_autor;
-
 drop function sojg_conversion_monetaria;
 
--- creacion de secuencias base
+-- 2. Creación de secuencias
 create sequence seq_sojg_pais start with 1 increment by 1;
 create sequence seq_sojg_ciudad start with 1 increment by 1;
 create sequence seq_sojg_institucion start with 1 increment by 1;
 create sequence seq_sojg_autor start with 1 increment by 1;
 
---  tablas 
-
+-- 3. Definición de tablas
 create table sojg_pais (
     id number default seq_sojg_pais.nextval,
     nombre varchar2(50) not null,
@@ -89,35 +86,28 @@ create table sojg_autor_libro (
     constraint fk_sojg_al_libro foreign key (isbn_libro) references sojg_libro(isbn)
 );
 
+-- 4. Inserción de datos
+insert into sojg_pais (nombre, moneda, continente) values ('España', 'EUR', 'Europa');
+insert into sojg_pais (nombre, moneda, continente) values ('Francia', 'EUR', 'Europa');
+insert into sojg_pais (nombre, moneda, continente) values ('Reino Unido', 'GBP', 'Europa');
+insert into sojg_pais (nombre, moneda, continente) values ('Grecia', 'EUR', 'Europa');
+insert into sojg_pais (nombre, moneda, continente) values ('Uruguay', 'UYU', 'America');
+insert into sojg_pais (nombre, moneda, continente) values ('Estados Unidos', 'USD', 'America');
+insert into sojg_pais (nombre, moneda, continente) values ('Rusia', 'RUB', 'Europa');
+insert into sojg_pais (nombre, moneda, continente) values ('Imperio Austrohungaro', 'EUR', 'Europa');
+insert into sojg_pais (nombre, moneda, continente) values ('Venezuela', 'VES', 'America');
+insert into sojg_pais (nombre, moneda, continente) values ('Mexico', 'MXN', 'America');
+insert into sojg_pais (nombre, moneda, continente) values ('Colombia', 'COP', 'America');
 
+insert into sojg_ciudad (nombre, id_pais) values ('Madrid', 1);
+insert into sojg_ciudad (nombre, id_pais) values ('Paris', 2);
+insert into sojg_ciudad (nombre, id_pais) values ('Londres', 3);
+insert into sojg_ciudad (nombre, id_pais) values ('Nueva York', 6);
+insert into sojg_ciudad (nombre, id_pais) values ('Caracas', 9);
+insert into sojg_ciudad (nombre, id_pais) values ('Ciudad de Mexico', 10);
+insert into sojg_ciudad (nombre, id_pais) values ('Bogota', 11);
+insert into sojg_ciudad (nombre, id_pais) values ('Portland', 6);
 
--- insercion de datos maestros 
-
-
--- 1. paises
-insert into sojg_pais (nombre, moneda, continente) values ('España', 'EUR', 'Europa');             
-insert into sojg_pais (nombre, moneda, continente) values ('Francia', 'EUR', 'Europa');            
-insert into sojg_pais (nombre, moneda, continente) values ('Reino Unido', 'GBP', 'Europa');        
-insert into sojg_pais (nombre, moneda, continente) values ('Grecia', 'EUR', 'Europa');             
-insert into sojg_pais (nombre, moneda, continente) values ('Uruguay', 'UYU', 'America');           
-insert into sojg_pais (nombre, moneda, continente) values ('Estados Unidos', 'USD', 'America');    
-insert into sojg_pais (nombre, moneda, continente) values ('Rusia', 'RUB', 'Europa');              
-insert into sojg_pais (nombre, moneda, continente) values ('Imperio Austrohungaro', 'EUR', 'Europa'); 
-insert into sojg_pais (nombre, moneda, continente) values ('Venezuela', 'VES', 'America');         
-insert into sojg_pais (nombre, moneda, continente) values ('Mexico', 'MXN', 'America');            
-insert into sojg_pais (nombre, moneda, continente) values ('Colombia', 'COP', 'America');          
-
--- 2. ciudades 
-insert into sojg_ciudad (nombre, id_pais) values ('Madrid', 1);        
-insert into sojg_ciudad (nombre, id_pais) values ('Paris', 2);         
-insert into sojg_ciudad (nombre, id_pais) values ('Londres', 3);       
-insert into sojg_ciudad (nombre, id_pais) values ('Nueva York', 6);    
-insert into sojg_ciudad (nombre, id_pais) values ('Caracas', 9);       
-insert into sojg_ciudad (nombre, id_pais) values ('Ciudad de Mexico', 10); 
-insert into sojg_ciudad (nombre, id_pais) values ('Bogota', 11);       
-insert into sojg_ciudad (nombre, id_pais) values ('Portland', 6);      
-
--- 3. instituciones 
 insert into sojg_institucion (nombre, tipo, id_ciudad) values ('Biblioteca Los Palos Grandes', 'Biblioteca', 5);
 insert into sojg_institucion (nombre, tipo, id_ciudad) values ('Biblioteca Nacional de España', 'Biblioteca', 1);
 insert into sojg_institucion (nombre, tipo, id_ciudad) values ('Strand Book Store', 'Otro', 4);
@@ -127,74 +117,56 @@ insert into sojg_institucion (nombre, tipo, id_ciudad) values ('Biblioteca Luis 
 insert into sojg_institucion (nombre, tipo, id_ciudad) values ('Shakespeare and Company', 'Otro', 2);
 insert into sojg_institucion (nombre, tipo, id_ciudad) values ('Biblioteca Vasconcelos', 'Biblioteca', 6);
 
--- 4. autores 
-insert into sojg_autor (nombre, apellido) values ('Miguel', 'de Cervantes');        
-insert into sojg_autor (nombre, apellido) values ('Victor', 'Hugo');                
-insert into sojg_autor (nombre, apellido) values ('Charles', 'Dickens');            
-insert into sojg_autor (nombre, apellido) values ('Charlotte', 'Bronte');           
-insert into sojg_autor (nombre, apellido) values ('Homero', 'De Quios');            
-insert into sojg_autor (nombre, apellido) values ('William', 'Shakespeare');        
-insert into sojg_autor (nombre, apellido) values ('Horacio', 'Quiroga');            
-insert into sojg_autor (nombre, "2do_nombre", apellido) values ('Francis', 'Scott', 'Fitzgerald'); 
-insert into sojg_autor (nombre, apellido) values ('Fiodor', 'Dostoyevski');         
-insert into sojg_autor (nombre, apellido) values ('Franz', 'Kafka');                
-insert into sojg_autor (nombre, apellido) values ('Oscar', 'Wilde');                
-insert into sojg_autor (nombre, apellido) values ('Bram', 'Stoker');                
-insert into sojg_autor (nombre, apellido) values ('Mary', 'Shelley');               
-insert into sojg_autor (nombre, apellido) values ('Albert', 'Camus');               
-insert into sojg_autor (nombre, apellido) values ('John', 'Steinbeck');             
-insert into sojg_autor (nombre, apellido) values ('Jane', 'Austen');                
+insert into sojg_autor (nombre, apellido) values ('Miguel', 'de Cervantes');
+insert into sojg_autor (nombre, apellido) values ('Victor', 'Hugo');
+insert into sojg_autor (nombre, apellido) values ('Charles', 'Dickens');
+insert into sojg_autor (nombre, apellido) values ('Charlotte', 'Bronte');
+insert into sojg_autor (nombre, apellido) values ('Homero', 'De Quios');
+insert into sojg_autor (nombre, apellido) values ('William', 'Shakespeare');
+insert into sojg_autor (nombre, apellido) values ('Horacio', 'Quiroga');
+insert into sojg_autor (nombre, "2do_nombre", apellido) values ('Francis', 'Scott', 'Fitzgerald');
+insert into sojg_autor (nombre, apellido) values ('Fiodor', 'Dostoyevski');
+insert into sojg_autor (nombre, apellido) values ('Franz', 'Kafka');
+insert into sojg_autor (nombre, apellido) values ('Oscar', 'Wilde');
+insert into sojg_autor (nombre, apellido) values ('Bram', 'Stoker');
+insert into sojg_autor (nombre, apellido) values ('Mary', 'Shelley');
+insert into sojg_autor (nombre, apellido) values ('Albert', 'Camus');
+insert into sojg_autor (nombre, apellido) values ('John', 'Steinbeck');
+insert into sojg_autor (nombre, apellido) values ('Jane', 'Austen');
 
--- 5. libros 
-insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion) 
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978001, 'Don Quijote de la Mancha', 863, 'Español', 1605, 'Aventuras de un hidalgo y su escudero.', 'Caballeria', 'Novela', 'SI', 1);
-
-insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion) 
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978002, 'Los miserables', 1200, 'Frances', 1862, 'Historia de redencion de Jean Valjean.', 'Injusticia social', 'Novela', 'SI', 2);
-
-insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion) 
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978003, 'Historia de dos ciudades', 450, 'Ingles', 1859, 'Paris y Londres durante la revolucion.', 'Revolucion Francesa', 'Novela', 'SI', 3);
-
-insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion) 
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978004, 'Jane Eyre', 500, 'Ingles', 1847, 'La vida y amores de una institutriz.', 'Romance y drama', 'Novela', 'SI', 3);
-
-insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion) 
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978005, 'La Iliada', 600, 'Griego Antiguo', 800, 'Relato de la guerra de Troya.', 'Guerra', 'Epopeya', 'NO', 4);
-
-insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion) 
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978006, 'Hamlet', 200, 'Ingles', 1603, 'Tragedia del principe de Dinamarca.', 'Venganza', 'Otro', 'NO', 3);
-
-insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion) 
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978007, 'Cuentos de amor de locura y de muerte', 150, 'Español', 1917, 'Coleccion de relatos oscuros.', 'Muerte y tragedia', 'Cuento', 'SI', 5);
-
-insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion) 
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978008, 'El gran Gatsby', 218, 'Ingles', 1925, 'La vida de los millonarios en los años 20.', 'Decadencia americana', 'Novela', 'SI', 6);
-
-insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion) 
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978009, 'Crimen y castigo', 600, 'Ruso', 1866, 'Un estudiante comete un asesinato.', 'Culpa y redencion', 'Novela', 'SI', 7);
-
-insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion) 
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978010, 'La metamorfosis', 100, 'Aleman', 1915, 'Un hombre amanece convertido en insecto.', 'Aislamiento', 'Novela', 'NO', 8);
-
-insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion) 
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978011, 'El retrato de Dorian Gray', 250, 'Ingles', 1890, 'Un joven no envejece mientras su retrato si.', 'Vanidad', 'Novela', 'SI', 3);
-
-insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion) 
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978012, 'Dracula', 400, 'Ingles', 1897, 'El viaje del famoso vampiro a Londres.', 'Terror', 'Novela', 'SI', 3);
-
-insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion) 
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978013, 'Frankenstein', 280, 'Ingles', 1818, 'Un cientifico da vida a una criatura.', 'Ciencia ficcion', 'Novela', 'SI', 3);
-
-insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion) 
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978014, 'El extranjero', 120, 'Frances', 1942, 'La vida de un hombre apatico en Argel.', 'Absurdo', 'Novela', 'SI', 2);
-
-insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion) 
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978015, 'De ratones y hombres', 110, 'Ingles', 1937, 'Dos trabajadores rurales durante la gran depresion.', 'Amistad', 'Novela', 'SI', 6);
-
-insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion) 
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978016, 'Orgullo y prejuicio', 430, 'Ingles', 1813, 'La relacion entre Elizabeth Bennet y Mr. Darcy.', 'Romance', 'Novela', 'SI', 3);
 
--- 6. relaciones autor y libro
 insert into sojg_autor_libro (id_autor, isbn_libro) values (1, 978001);
 insert into sojg_autor_libro (id_autor, isbn_libro) values (2, 978002);
 insert into sojg_autor_libro (id_autor, isbn_libro) values (3, 978003);
@@ -214,13 +186,9 @@ insert into sojg_autor_libro (id_autor, isbn_libro) values (16, 978016);
 
 commit;
 
-
-
--- funciones 
-
-
+-- 5. Función almacenada
 create or replace function sojg_conversion_monetaria (
-    p_monto in number, 
+    p_monto in number,
     p_moneda_origen in varchar2
 ) return number is
     v_monto_dolares number;
@@ -244,3 +212,15 @@ begin
     return round(v_monto_dolares, 2);
 end;
 /
+
+-- 6. Creación de la vista de prueba
+create or replace view v_sojg_prueba_conversion as
+select
+    id as pais_id,
+    nombre as pais_nombre,
+    moneda as moneda_local,
+    continente,
+    100 as monto_local_prueba,
+    sojg_conversion_monetaria(100, moneda) as monto_en_usd
+from
+    sojg_pais;
