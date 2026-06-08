@@ -241,26 +241,12 @@ commit;
 -- ==========================================
 create or replace function sojg_conversion_monetaria (
     p_monto in number,
-    p_moneda_origen in varchar2
-) return number is
+    p_moneda_origen in varchar2,
+    p_tasa_cambio in number
+) return number is 
     v_monto_dolares number;
-    v_tasa_cambio number;
-begin
-    if upper(p_moneda_origen) = 'EUR' then
-        v_tasa_cambio := 1.08;
-    elsif upper(p_moneda_origen) = 'COP' then
-        v_tasa_cambio := 0.00026;
-    elsif upper(p_moneda_origen) = 'VES' then
-        v_tasa_cambio := 0.028;
-    elsif upper(p_moneda_origen) = 'GBP' then
-        v_tasa_cambio := 1.25;
-    elsif upper(p_moneda_origen) = 'MXN' then
-        v_tasa_cambio := 0.06;
-    else
-        v_tasa_cambio := 1;
-    end if;
-
-    v_monto_dolares := p_monto * v_tasa_cambio;
+begin 
+    v_monto_dolares := p_monto * p_tasa_cambio;
     return round(v_monto_dolares, 2);
 end;
 /
@@ -271,7 +257,7 @@ end;
 -- en dolares americanos
 -- uso 1: select * from sojg_v_prueba_conversion;
 -- uso 2: select * from sojg_v_prueba_conversion
---            where id_miembro = 1;
+--            where id_pais = 1;
 -- ==========================================
 create or replace view sojg_v_prueba_conversion as
 select
@@ -280,6 +266,7 @@ select
     moneda as moneda_local,
     continente,
     100 as monto_local_prueba,
-    sojg_conversion_monetaria(100, moneda) as monto_en_usd
+    1.08 as tasa_cambio,
+    sojg_conversion_monetaria(100, moneda, 1.08) as monto_en_usd
 from
     sojg_pais;
