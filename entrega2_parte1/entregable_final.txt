@@ -639,9 +639,9 @@ insert into sojg_lector (nombre, apellido, fecha_nacimiento, idiomas, correo_ele
 
 -- menores de 12 (grupo ninos) con representante
 insert into sojg_lector (nombre, apellido, fecha_nacimiento, idiomas, correo_electronico, documento_identidad, autorizacion_representante, id_representante)
-    values ('Mateo', 'Gonzalez', to_date('10/05/2015', 'DD/MM/YYYY'), 'Espanol', 'mateo.gonzalez@gmail.com', 'V-10234567', 'S', 1);
+    values ('Mateo', 'Gonzalez', to_date('10/05/2015', 'DD/MM/YYYY'), 'Espanol', 'mateo.gonzalez@gmail.com', 'V-10234567', 'SI', 1);
 insert into sojg_lector (nombre, apellido, fecha_nacimiento, idiomas, correo_electronico, documento_identidad, autorizacion_representante, id_representante_lector)
-    values ('Mia', 'Mitchell', to_date('22/09/2016', 'DD/MM/YYYY'), 'Ingles', 'mia.mitchell@gmail.com', 'E-20345678', 'S', 4);
+    values ('Mia', 'Mitchell', to_date('22/09/2016', 'DD/MM/YYYY'), 'Ingles', 'mia.mitchell@gmail.com', 'E-20345678', 'SI', 4);
 
 commit;
 
