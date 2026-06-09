@@ -24,6 +24,8 @@ create sequence sojg_seq_lector start with 1 increment by 1;
 -- Secuencia PAGO_MEMBRESIA
 create sequence sojg_seq_pago_membresia start with 1 increment by 1;
 
+commit;
+
 -- ==========================================
 -- FASE 2: TABLAS
 -- ==========================================
@@ -41,6 +43,8 @@ create table sojg_pais (
     constraint sojg_chk_pais_continente check (continente in ('Europa', 'Asia', 'America', 'Africa', 'Oceania'))
 );
 
+commit;
+
 -- Tabla INSTITUCION
 create table sojg_institucion (
     id number default sojg_seq_institucion.nextval,
@@ -51,6 +55,8 @@ create table sojg_institucion (
     constraint sojg_uq_institucion_nombre unique (nombre),
     constraint sojg_chk_inst_tipo check (tipo in ('Universidad','Colegio','Biblioteca','Escuela','Otro'))
 );
+
+commit;  
 
 -- Tabla AUTOR
 create table sojg_autor (
@@ -64,6 +70,8 @@ create table sojg_autor (
     constraint sojg_pk_autor primary key (id_autor)
 );
 
+commit;
+
 -- Tabla REPRESENTANTE 
 create table sojg_representante (
     id number default sojg_seq_representante.nextval not null,
@@ -75,6 +83,8 @@ create table sojg_representante (
     constraint sojg_uq_representante_doc unique (documento_identidad)
 );
 
+commit;  
+
 -- Tabla CIUDAD
 create table sojg_ciudad (
     id number default sojg_seq_ciudad.nextval,
@@ -84,6 +94,8 @@ create table sojg_ciudad (
     constraint sojg_pk_ciudad primary key (id),
     constraint sojg_fk_ciudad_pais foreign key (id_pais) references sojg_pais(id)
 );
+
+commit;
 
 -- Tabla LIBRO
 create table sojg_libro (
@@ -109,6 +121,8 @@ create table sojg_libro (
     constraint sojg_chk_libro_cont_dif check (isbn_continua_en != isbn)
 );
 
+commit;
+
 -- Tabla AUTOR_LIBRO
 create table sojg_autor_libro (
     id_autor number not null,
@@ -118,6 +132,8 @@ create table sojg_autor_libro (
     constraint sojg_fk_al_autor foreign key (id_autor) references sojg_autor(id_autor),
     constraint sojg_fk_al_libro foreign key (isbn_libro) references sojg_libro(isbn)
 );
+
+commit;
 
 -- Tabla CLUB
 CREATE TABLE sojg_club (
@@ -133,6 +149,8 @@ CREATE TABLE sojg_club (
   CONSTRAINT sojg_pk_club PRIMARY KEY (id_club)
 );
 
+commit;
+
 -- Tabla ASOCIACION
 CREATE TABLE sojg_asociacion (
   id_club_1 number NOT NULL REFERENCES sojg_club(id_club),
@@ -143,6 +161,8 @@ CREATE TABLE sojg_asociacion (
 );
 
 COMMENT ON TABLE sojg_asociacion IS 'La validacion de que dos clubes tengan el mismo idioma es externo a la base de datos';
+
+commit;
 
 -- Table LECTOR
 create table sojg_lector (
@@ -168,6 +188,8 @@ create table sojg_lector (
     constraint sojg_fk_lector_representante_lector foreign key (id_representante_lector) references sojg_lector(id_miembro)
 );
 
+commit;
+
 -- Tabla TELEFONO
 create table sojg_telefono (
     codigo number not null,
@@ -183,6 +205,8 @@ create table sojg_telefono (
     constraint sojg_fk_telefono_club foreign key (id_club) references sojg_club(id_club)
 );
 
+commit;
+
 -- Tabla PREFERENCIA_LECTURA
 create table sojg_preferencia_lectura (
     id_miembro number not null,
@@ -195,6 +219,8 @@ create table sojg_preferencia_lectura (
     constraint sojg_fk_preferencia_lector foreign key (id_miembro) references sojg_lector(id_miembro),
     constraint sojg_fk_preferencia_libro foreign key (isbn_libro) references sojg_libro(isbn)
 );
+
+commit;
 
 -- Tabla GRUPO_DE_LECTURA
 create table sojg_grupo_de_lectura (
@@ -212,6 +238,8 @@ create table sojg_grupo_de_lectura (
     constraint sojg_ck_grupo_hora check (hora_inicio between 17 and 19)
 );
 
+commit;
+
 -- tabla HISTORICO_MEMBRESIA
 create table sojg_historico_membresia (
     id_miembro number not null,
@@ -228,6 +256,8 @@ create table sojg_historico_membresia (
     constraint sojg_ck_hmem_motivo check (motivo_retiro in ('Voluntario', 'Inasistencia', 'Deudas', 'Otro'))
 );
 
+commit;
+
 -- tabla HISTORICO_GRUPO_LECTURA
 create table sojg_historico_grupo_lectura (
     id_club number not null,
@@ -242,6 +272,8 @@ create table sojg_historico_grupo_lectura (
     constraint sojg_fk_hgru_membresia foreign key (id_miembro, id_club, fecha_inicio_membresia) references sojg_historico_membresia(id_miembro, id_club, fecha_inicio_membresia)
 );
 
+commit;
+
 -- Tabla PAGO_MEMBRESIA
 create table sojg_pago_membresia (
     id number default sojg_seq_pago_membresia.nextval not null,
@@ -255,6 +287,8 @@ create table sojg_pago_membresia (
     constraint sojg_fk_pago_miembro foreign key (id_miembro) references sojg_lector(id_miembro),
     constraint sojg_fk_pago_club foreign key (id_club) references sojg_club(id_club)
 );
+
+commit;
 
 -- Tabla CALENDARIO_MES
 create table sojg_calendario_mes (
@@ -277,6 +311,8 @@ create table sojg_calendario_mes (
     constraint sojg_ck_cal_ultima check (ultima_discusion in ('SI', 'NO'))
 );
 
+commit;
+
 -- Tabla INASISTENCIA
 create table sojg_inasistencia (
     id_club number not null,
@@ -290,6 +326,8 @@ create table sojg_inasistencia (
     constraint sojg_fk_inas_miembro foreign key (id_miembro) references sojg_lector(id_miembro)
 );
 
+commit;
+
 -- Tabla OBRA
 CREATE TABLE sojg_obra(
   id_obra number DEFAULT sojg_seq_obra.nextval NOT NULL,
@@ -302,6 +340,8 @@ CREATE TABLE sojg_obra(
   CONSTRAINT sojg_pk_obra PRIMARY KEY (id_obra)
 );
 
+commit;
+
 -- Tabla LIBRO_REFERENCIADO_POR_LA_OBRA
 CREATE TABLE sojg_libro_referenciado_por_la_obra (
   id_obra number NOT NULL REFERENCES sojg_obra(id_obra),
@@ -309,12 +349,16 @@ CREATE TABLE sojg_libro_referenciado_por_la_obra (
   CONSTRAINT sojg_pk_libro_referenciado PRIMARY KEY (id_obra, isbn_libro)
 );
 
+commit;
+
 -- Tabla ELENCO
 CREATE TABLE sojg_elenco (
   id_obra number NOT NULL REFERENCES sojg_obra(id_obra),
   id_miembro number NOT NULL REFERENCES sojg_lector(id_miembro),
   CONSTRAINT sojg_pk_elenco PRIMARY KEY (id_obra, id_miembro)
 );
+
+commit;
 
 -- tabla PRESENTACION_DE_LA_OBRA
 create table sojg_presentacion_de_la_obra (
@@ -329,6 +373,8 @@ create table sojg_presentacion_de_la_obra (
     constraint sojg_ck_pres_asistentes check (cantidad_asistentes > 0)
 );
 
+commit;
+
 -- tabla MEJ0R_ACTOR
 create table sojg_mejor_actor (
     id_obra number not null,
@@ -341,6 +387,8 @@ create table sojg_mejor_actor (
     constraint sojg_fk_mact_presentacion foreign key (id_obra, fecha_presentacion) references sojg_presentacion_de_la_obra(id_obra, fecha),
     constraint sojg_ck_mact_votos check (votos > 0)
 );
+
+commit;
 
 -- ==========================================
 -- FASE 3: INSERTS
@@ -1114,6 +1162,8 @@ begin
 end;
 /
 
+commit;
+
 -- Funcion: Calcular edad de un miembro
 CREATE OR REPLACE FUNCTION sojg_edad_miembro (miembro_id number) RETURN number IS
   v_edad number;
@@ -1126,6 +1176,8 @@ BEGIN
   RETURN v_edad;
 END;
 /
+
+commit;
 
 -- Funcion: Calcular antiguedad de un miembro en el club
 CREATE OR REPLACE FUNCTION sojg_antiguedad_en_el_club_miembro(p_id_miembro number, p_id_club number) RETURN number IS v_antiguedad number;
@@ -1144,6 +1196,9 @@ BEGIN
   END LOOP;
   RETURN v_antiguedad;
 END;
+/
+
+commit;
 
 -- Funcion: Calcular participacion entre dos fechas
 create or replace function sojg_calcular_pct_participacion(
@@ -1218,6 +1273,8 @@ exception
         return null;
 end sojg_pct_participacion_bimestre_miembro;
 /
+
+commit;
 
 -- Funcion: calcular promedio participacion
 create or replace function sojg_pct_prom_participacion_mensual(
@@ -1368,6 +1425,8 @@ exception
         return 'Error al procesar la participacion mensual.';
 end sojg_pct_prom_participacion_mensual;
 /
+
+commit;
 
 -- ==========================================
 -- FASE 5: VISTAS 
