@@ -1225,7 +1225,7 @@ begin
     where (hgl.id_miembro = p_id_miembro) 
         and (cm.fecha_reunion >= p_fecha_inicio) 
         and (cm.fecha_reunion <= p_fecha_fin) 
-        and (cm.realizada = 'S');
+        and (cm.realizada = 'SI');
 
     -- si no hay reuniones retorna 0
     if (v_total_reuniones = 0) then 
