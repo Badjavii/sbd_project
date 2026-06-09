@@ -585,11 +585,11 @@ insert into sojg_autor_libro (id_autor, isbn_libro) values (16, 978016);
 commit;
 
 -- Inserts CLUB
-INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ("Club de Lectura de la Biblioteca Los Palos Grandes", 'Calle Los Palos Grandes, Caracas', '1060', 'Español', 1, 'SI', 1);
-INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ("Club de Lectura de la Biblioteca Nacional de España", 'Paseo de Recoletos, Madrid', '28001', 'Español', 2, 'NO', 2);
-INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ("Strand Book Store Book Clubs", '828 Broadway, New York', '10003', 'Inglés', 3, 'SI', 3);
-INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ("Club de Lectura de la Librería El Péndulo", 'Av. Presidente Masaryk 111, Ciudad de México', '11560', 'Español', 4, 'NO', 4);
-INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ("Powell's Book Clubs", '1005 W Burnside St, Portland', '97209', 'Inglés', 5, 'SI', 5);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ('Club de Lectura de la Biblioteca Los Palos Grandes', 'Calle Los Palos Grandes, Caracas', '1060', 'Español', 1, 'SI', 1);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ('Club de Lectura de la Biblioteca Nacional de España', 'Paseo de Recoletos, Madrid', '28001', 'Español', 2, 'NO', 2);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ('Strand Book Store Book Clubs', '828 Broadway, New York', '10003', 'Inglés', 3, 'SI', 3);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ('Club de Lectura de la Librería El Péndulo', 'Av. Presidente Masaryk 111, Ciudad de México', '11560', 'Español', 4, 'NO', 4);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ('Powell's Book Clubs', '1005 W Burnside St, Portland', '97209', 'Inglés', 5, 'SI', 5);
 INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ('Club de Lectores del Banco de la República-Biblioteca Luis Ángel Arango', 'Calle 11 #4-14, Bogotá', '11001', 'Español', 6, 'NO', 6);
 INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ('Shakespeare and Company Reading Group', '37 Rue de la Bûcherie, Paris', '75005', 'Francés', 7, 'SI', 7);
 INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ('Club de Lectura de la Biblioteca Vasconcelos', 'Av. Cuitláhuac 2000, Ciudad de México', '02000', 'Español', 8, 'NO', 8);
@@ -1431,3 +1431,18 @@ commit;
 -- ==========================================
 -- FASE 5: VISTAS 
 -- ==========================================
+
+-- Vista 1: informacion de pais con 
+create or replace view sojg_v_prueba_conversion as
+select
+    id as pais_id,
+    nombre as pais_nombre,
+    moneda as moneda_local,
+    continente,
+    100 as monto_local_prueba,
+    1.08 as tasa_cambio,
+    sojg_conversion_monetaria(100, moneda, 1.08) as monto_en_usd
+from
+    sojg_pais;
+
+
