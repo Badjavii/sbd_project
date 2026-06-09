@@ -1180,22 +1180,30 @@ END;
 commit;
 
 -- Funcion: Calcular antiguedad de un miembro en el club
-CREATE OR REPLACE FUNCTION sojg_antiguedad_en_el_club_miembro(p_id_miembro number, p_id_club number) RETURN number IS v_antiguedad number;
-BEGIN
-  -- SELECT FLOOR(MONTHS_BETWEEN(TRUNC(SYSDATE), TRUNC(fecha_inicio)) / 12)
-  FOR rec IN (
-    SELECT fecha_inicio, fecha_fin
-    FROM sojg_historico_grupo_lectura
-    WHERE id_miembro = p_id_miembro AND id_club = p_id_club
-  ) LOOP
-    IF rec.fecha_fin IS NULL THEN
-      v_antiguedad := v_antiguedad + FLOOR(MONTHS_BETWEEN(TRUNC(SYSDATE), TRUNC(rec.fecha_inicio)) / 12);
-    ELSE
-      v_antiguedad := v_antiguedad + FLOOR(MONTHS_BETWEEN(TRUNC(rec.fecha_fin), TRUNC(rec.fecha_inicio)) / 12);
-    END IF;
-  END LOOP;
-  RETURN v_antiguedad;
-END;
+create or replace function sojg_antiguedad_en_el_club_miembro (
+    p_id_miembro in number,
+    p_id_club in number
+) return number is
+    v_fecha_inicio date;
+    v_fecha_fin date;
+    v_antiguedad number := 0;
+begin
+    select fecha_inicio_membresia, fecha_fin
+    into v_fecha_inicio, v_fecha_fin
+    from sojg_historico_membresia
+    where id_miembro = p_id_miembro
+      and id_club = p_id_club
+      and rownum = 1;
+
+    v_antiguedad := months_between(nvl(v_fecha_fin, sysdate), v_fecha_inicio) / 12;
+
+    return trunc(v_antiguedad, 2);
+exception
+    when no_data_found then
+        return 0;
+    when others then
+        return 0;
+end sojg_antiguedad_en_el_club_miembro;
 /
 
 commit;
@@ -1477,7 +1485,7 @@ select
     t.codigo || '-' || t.numero as telefono,
     t.tipo as tipo_telefono,
     hm.id_club,
-    hm.fecha_inicio as fecha_ingreso_club,
+    hm.fecha_inicio_membresia as fecha_ingreso_club,
     hm.estatus
 from sojg_lector l 
 join sojg_historico_membresia hm 
@@ -1507,7 +1515,7 @@ join sojg_historico_membresia hm
     on (l.id_miembro = hm.id_miembro)
 -- genera todos los annos disponibles en el historico 
 cross join (
-    select distinct extract(year from fecha_inicio) as anno 
+    select distinct extract(year from fecha_inicio_membresia) as anno 
     from sojg_historico_membresia
 ) annos
 -- genera los 6 bimestres del anno con su periodo legible
