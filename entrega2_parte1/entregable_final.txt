@@ -1243,6 +1243,8 @@ exception
 end sojg_calcular_pct_participacion;
 /
 
+commit;
+
 -- Funcion: Calcular participacion en un bimestre
 create or replace function sojg_pct_participacion_bimestre_miembro(
     p_id_miembro number, p_bimestre number, p_anno number
@@ -1445,15 +1447,21 @@ select
 from
     sojg_pais;
 
+commit;
+
 -- Vista 2: Mostrar edad de miembros
 CREATE OR REPLACE VIEW sojg_edades_miembros AS
 SELECT id_miembro, nombre, sojg_edad_miembro(id_miembro) AS edad
 FROM sojg_lector;
 
+commit;
+
 -- Vista 3: Mostrar antiguedad de miembro en club
 CREATE OR REPLACE VIEW sojg_antiguedad_miembros_en_club AS
 SELECT h.id_miembro, h.id_club, sojg_antiguedad_en_el_club_miembro(h.id_miembro, h.id_club) AS antiguedad
 FROM sojg_historico_grupo_lectura h;
+
+commit;
 
 -- Vista 4: informacion basica del miembro 
 create or replace view sojg_v_miembros as 
@@ -1477,6 +1485,8 @@ join sojg_historico_membresia hm
 left join sojg_telefono t 
     on (l.id_miembro = t.id_miembro)
 where (hm.estatus = 'Activa');
+
+commit;
 
 -- Vista 5: participacion de miembro(s) por bimestre y anno
 create or replace view sojg_v_participacion as 
@@ -1510,6 +1520,8 @@ cross join (
     select 6, 'Noviembre', 'Diciembre' from dual 
 ) bimestres where (hm.estatus = 'Activa');
 
+commit;
+
 -- Vista 6: preferencias de lectura por miembro ordenadas por preferencia
 create or replace view sojg_v_preferencias as 
 select 
@@ -1526,6 +1538,8 @@ join sojg_preferencia_lectura pl
 join sojg_libro li 
     on (pl.isbn_libro = li.isbn)
 order by l.id_miembro, pl.orden_preferencia;
+
+commit;
 
 -- Vista 7: representantes de miembros menores de edad muestra si el representante es otro lector del club o una persona externa
 create or replace view sojg_v_representantes as 
@@ -1553,6 +1567,8 @@ left join sojg_lector lr
     on (l.id_representante_lector = lr.id_miembro)
 where (l.id_representante is not null) or (l.id_representante_lector is not null);
 
+commit;
+
 -- Vista 8: calendario detallado por club
 create or replace view sojg_v_calendario_detallado as
 select
@@ -1573,6 +1589,8 @@ join sojg_grupo_de_lectura gl
 join sojg_libro l
     on (cm.isbn_libro = l.isbn);
 
+commit;
+
 -- Vista 9: historico de libros analizados
 create or replace view sojg_v_historico_lecturas as
 select
@@ -1587,6 +1605,8 @@ join sojg_club c
 join sojg_libro l
     on (cm.isbn_libro = l.isbn)
 where (cm.realizada = 'SI');
+
+commit;
 
 -- Vista 10: moderadores por reunion
 create or replace view sojg_v_moderadores_reunion as
@@ -1603,3 +1623,5 @@ join sojg_libro l
     on (cm.isbn_libro = l.isbn)
 join sojg_lector m
     on (cm.id_moderador = m.id_miembro);
+
+commit;
