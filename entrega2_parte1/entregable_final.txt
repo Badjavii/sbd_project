@@ -139,7 +139,7 @@ CREATE TABLE sojg_asociacion (
   id_club_2 number NOT NULL REFERENCES sojg_club(id_club),
   fecha_asociacion date NOT NULL,
   CONSTRAINT sojg_pk_asociacion PRIMARY KEY (id_club_1, id_club_2),
-  CONSTRAINT sojg_check_duplicate_asociacion CHECK (id_club_1 < id_club_2),
+  CONSTRAINT sojg_check_duplicate_asociacion CHECK (id_club_1 < id_club_2)
 );
 
 COMMENT ON TABLE sojg_asociacion IS 'La validacion de que dos clubes tengan el mismo idioma es externo a la base de datos';
@@ -305,8 +305,8 @@ CREATE TABLE sojg_obra(
 -- Tabla LIBRO_REFERENCIADO_POR_LA_OBRA
 CREATE TABLE sojg_libro_referenciado_por_la_obra (
   id_obra number NOT NULL REFERENCES sojg_obra(id_obra),
-  id_libro number NOT NULL REFERENCES sojg_libro(ISBN),
-  CONSTRAINT sojg_pk_libro_referenciado PRIMARY KEY (id_obra, ISBN)
+  isbn_libro number NOT NULL REFERENCES sojg_libro(isbn),
+  CONSTRAINT sojg_pk_libro_referenciado PRIMARY KEY (id_obra, isbn_libro)
 );
 
 -- Tabla ELENCO
@@ -347,17 +347,17 @@ create table sojg_mejor_actor (
 -- ==========================================
 
 -- Inserts PAIS (11 registros)
-insert into sojg_pais (nombre, moneda, continente) values ('España', 'EUR', 'Europa');
-insert into sojg_pais (nombre, moneda, continente) values ('Francia', 'EUR', 'Europa');
-insert into sojg_pais (nombre, moneda, continente) values ('Reino Unido', 'GBP', 'Europa');
-insert into sojg_pais (nombre, moneda, continente) values ('Grecia', 'EUR', 'Europa');
-insert into sojg_pais (nombre, moneda, continente) values ('Uruguay', 'UYU', 'America');
-insert into sojg_pais (nombre, moneda, continente) values ('Estados Unidos', 'USD', 'America');
-insert into sojg_pais (nombre, moneda, continente) values ('Rusia', 'RUB', 'Europa');
-insert into sojg_pais (nombre, moneda, continente) values ('Imperio Austrohungaro', 'EUR', 'Europa');
-insert into sojg_pais (nombre, moneda, continente) values ('Venezuela', 'VES', 'America');
-insert into sojg_pais (nombre, moneda, continente) values ('Mexico', 'MXN', 'America');
-insert into sojg_pais (nombre, moneda, continente) values ('Colombia', 'COP', 'America');
+insert into sojg_pais (nombre, moneda, nacionalidad, continente) values ('España', 'EUR', 'Español', 'Europa');
+insert into sojg_pais (nombre, moneda, nacionalidad, continente) values ('Francia', 'EUR', 'Frances', 'Europa');
+insert into sojg_pais (nombre, moneda, nacionalidad, continente) values ('Reino Unido', 'GBP', 'Britanico', 'Europa');
+insert into sojg_pais (nombre, moneda, nacionalidad, continente) values ('Grecia', 'EUR', 'Griego', 'Europa');
+insert into sojg_pais (nombre, moneda, nacionalidad, continente) values ('Uruguay', 'UYU', 'Uruguayo', 'America');
+insert into sojg_pais (nombre, moneda, nacionalidad, continente) values ('Estados Unidos', 'USD', 'Estadounidense', 'America');
+insert into sojg_pais (nombre, moneda, nacionalidad, continente) values ('Rusia', 'RUB', 'Ruso', 'Europa');
+insert into sojg_pais (nombre, moneda, nacionalidad, continente) values ('Imperio Austrohungaro','EUR', 'Austriaco', 'Europa');
+insert into sojg_pais (nombre, moneda, nacionalidad, continente) values ('Venezuela', 'VES', 'Venezolano', 'America');
+insert into sojg_pais (nombre, moneda, nacionalidad, continente) values ('Mexico', 'MXN', 'Mexicano', 'America');
+insert into sojg_pais (nombre, moneda, nacionalidad, continente) values ('Colombia', 'COP', 'Colombiano', 'America');
 
 commit;
 
@@ -395,27 +395,27 @@ insert into sojg_autor (nombre, apellido) values ('Jane', 'Austen');
 commit;
 
 -- Inserts REPRESENTANTE (11 registros)
-inset into sojg_representante (documento_identidad, nombre, apellido) 
+insert into sojg_representante (documento_identidad, nombre, apellido) 
     values ('V-12345678', 'Maria', 'Gonzalez');
-inset into sojg_representante (documento_identidad, nombre, apellido) 
+insert into sojg_representante (documento_identidad, nombre, apellido) 
     values ('V-23456789', 'Carlos', 'Perez');
-inset into sojg_representante (documento_identidad, nombre, apellido) 
+insert into sojg_representante (documento_identidad, nombre, apellido) 
     values ('E-34567890', 'Sophie', 'Dubois');
-inset into sojg_representante (documento_identidad, nombre, apellido) 
+insert into sojg_representante (documento_identidad, nombre, apellido) 
     values ('E-45678901', 'James', 'Mitchell');
-inset into sojg_representante (documento_identidad, nombre, apellido) 
+insert into sojg_representante (documento_identidad, nombre, apellido) 
     values ('V-56789012', 'Rosa', 'Hernandez');
-inset into sojg_representante (documento_identidad, nombre, apellido) 
+insert into sojg_representante (documento_identidad, nombre, apellido) 
     values ('E-67890123', 'Pierre', 'Leclerc');
-inset into sojg_representante (documento_identidad, nombre, apellido) 
+insert into sojg_representante (documento_identidad, nombre, apellido) 
     values ('E-78901234', 'Elena', 'Volkova');
-inset into sojg_representante (documento_identidad, nombre, apellido) 
+insert into sojg_representante (documento_identidad, nombre, apellido) 
     values ('C-89012345', 'Wei', 'Zhang');
-inset into sojg_representante (documento_identidad, nombre, apellido) 
+insert into sojg_representante (documento_identidad, nombre, apellido) 
     values ('E-90123456', 'Carmen', 'Torres');
-inset into sojg_representante (documento_identidad, nombre, apellido) 
+insert into sojg_representante (documento_identidad, nombre, apellido) 
     values ('M-01234567', 'Alejandro', 'Ramirez');
-inset into sojg_representante (documento_identidad, nombre, apellido) 
+insert into sojg_representante (documento_identidad, nombre, apellido) 
     values ('E-11223344', 'Isabella', 'Martin');
 
 commit;
@@ -975,15 +975,15 @@ insert into sojg_obra (titulo_de_obra, activa, descripcion_de_la_obra, costo_ent
 commit;
 
 -- Inserts LIBRO_REFERENCIADO_POR_LA_OBRA
-insert into sojg_libro_referenciado_por_la_obra (id_obra, id_libro) values (1, 978001);
-insert into sojg_libro_referenciado_por_la_obra (id_obra, id_libro) values (2, 978012);
-insert into sojg_libro_referenciado_por_la_obra (id_obra, id_libro) values (3, 978006);
-insert into sojg_libro_referenciado_por_la_obra (id_obra, id_libro) values (4, 978013);
-insert into sojg_libro_referenciado_por_la_obra (id_obra, id_libro) values (5, 978002);
-insert into sojg_libro_referenciado_por_la_obra (id_obra, id_libro) values (6, 978014);
-insert into sojg_libro_referenciado_por_la_obra (id_obra, id_libro) values (7, 978009);
-insert into sojg_libro_referenciado_por_la_obra (id_obra, id_libro) values (8, 978004);
-insert into sojg_libro_referenciado_por_la_obra (id_obra, id_libro) values (9, 978008);
+insert into sojg_libro_referenciado_por_la_obra (id_obra, isbn_libro) values (1, 978001);
+insert into sojg_libro_referenciado_por_la_obra (id_obra, isbn_libro) values (2, 978012);
+insert into sojg_libro_referenciado_por_la_obra (id_obra, isbn_libro) values (3, 978006);
+insert into sojg_libro_referenciado_por_la_obra (id_obra, isbn_libro) values (4, 978013);
+insert into sojg_libro_referenciado_por_la_obra (id_obra, isbn_libro) values (5, 978002);
+insert into sojg_libro_referenciado_por_la_obra (id_obra, isbn_libro) values (6, 978014);
+insert into sojg_libro_referenciado_por_la_obra (id_obra, isbn_libro) values (7, 978009);
+insert into sojg_libro_referenciado_por_la_obra (id_obra, isbn_libro) values (8, 978004);
+insert into sojg_libro_referenciado_por_la_obra (id_obra, isbn_libro) values (9, 978008);
 
 commit;
 
@@ -1100,6 +1100,274 @@ commit;
 -- ==========================================
 -- FASE 4: FUNCIONES
 -- ==========================================
+
+-- Funcion: Conversion monetaria
+create or replace function sojg_conversion_monetaria (
+    p_monto in number,
+    p_moneda_origen in varchar2,
+    p_tasa_cambio in number
+) return number is 
+    v_monto_dolares number;
+begin 
+    v_monto_dolares := p_monto * p_tasa_cambio;
+    return round(v_monto_dolares, 2);
+end;
+/
+
+-- Funcion: Calcular edad de un miembro
+CREATE OR REPLACE FUNCTION sojg_edad_miembro (miembro_id number) RETURN number IS
+  v_edad number;
+BEGIN
+  SELECT FLOOR(MONTHS_BETWEEN(TRUNC(SYSDATE), TRUNC(fecha_nacimiento)) / 12)
+  INTO v_edad
+  FROM sojg_lector
+  WHERE id_miembro = miembro_id;
+  
+  RETURN v_edad;
+END;
+/
+
+-- Funcion: Calcular antiguedad de un miembro en el club
+CREATE OR REPLACE FUNCTION sojg_antiguedad_en_el_club_miembro(p_id_miembro number, p_id_club number) RETURN number IS v_antiguedad number;
+BEGIN
+  -- SELECT FLOOR(MONTHS_BETWEEN(TRUNC(SYSDATE), TRUNC(fecha_inicio)) / 12)
+  FOR rec IN (
+    SELECT fecha_inicio, fecha_fin
+    FROM sojg_historico_grupo_lectura
+    WHERE id_miembro = p_id_miembro AND id_club = p_id_club
+  ) LOOP
+    IF rec.fecha_fin IS NULL THEN
+      v_antiguedad := v_antiguedad + FLOOR(MONTHS_BETWEEN(TRUNC(SYSDATE), TRUNC(rec.fecha_inicio)) / 12);
+    ELSE
+      v_antiguedad := v_antiguedad + FLOOR(MONTHS_BETWEEN(TRUNC(rec.fecha_fin), TRUNC(rec.fecha_inicio)) / 12);
+    END IF;
+  END LOOP;
+  RETURN v_antiguedad;
+END;
+
+-- Funcion: Calcular participacion entre dos fechas
+create or replace function sojg_calcular_pct_participacion(
+    p_id_miembro number, p_fecha_inicio date, p_fecha_fin date
+) return number is 
+    v_total_reuniones number :=0;
+    v_total_faltas number := 0;
+begin 
+    -- contar reuniones totales del miembro en ese periodo
+    select count(*) 
+    into v_total_reuniones 
+    from sojg_calendario_mes cm 
+    join sojg_historico_grupo_lectura hgl 
+        on (cm.id_club = hgl.id_club) 
+        and (cm.numero_de_grupo = hgl.numero_de_grupo) 
+    where (hgl.id_miembro = p_id_miembro) 
+        and (cm.fecha_reunion >= p_fecha_inicio) 
+        and (cm.fecha_reunion <= p_fecha_fin) 
+        and (cm.realizada = 'S');
+
+    -- si no hay reuniones retorna 0
+    if (v_total_reuniones = 0) then 
+        return 0;
+    end if;
+
+    -- contar inasistencias del miembro en ese periodo
+    select count(*) 
+    into v_total_faltas 
+    from sojg_inasistencia i 
+    where (i.id_miembro = p_id_miembro) 
+        and (i.fecha_reunion >= p_fecha_inicio) 
+        and (i.fecha_reunion <= p_fecha_fin);
+
+    -- retorna porcentaje de participacion
+    return round (
+        ((v_total_reuniones - v_total_faltas) / v_total_reuniones) * 100, 2
+    );
+
+exception 
+    when others then
+        return null;
+end sojg_calcular_pct_participacion;
+/
+
+-- Funcion: Calcular participacion en un bimestre
+create or replace function sojg_pct_participacion_bimestre_miembro(
+    p_id_miembro number, p_bimestre number, p_anno number
+) return number is 
+    v_fecha_inicio date;
+    v_fecha_fin date;
+begin
+    -- validar que el bimestre sea entre 1 y 6
+    if (p_bimestre < 1) or (p_bimestre > 6) then 
+        raise_application_error(-20001, 'bimestre debe estar entre 1 y 6');
+    end if;
+
+    -- calcular fecha inicio del bimestre
+    v_fecha_inicio := to_date(
+        '01/' || to_char((p_bimestre - 1) * 2 + 1, 'FM00') || '/' || to_char(p_anno), 'DD/MM/YYYY' 
+    );
+
+    -- calcular fecha fin de bimestre
+    v_fecha_fin := add_months(v_fecha_inicio, 2) - 1;
+
+    -- invocar funcion base
+    return sojg_calcular_pct_participacion(
+        p_id_miembro, v_fecha_inicio, v_fecha_fin
+    );
+
+exception 
+    when others then
+        return null;
+end sojg_pct_participacion_bimestre_miembro;
+/
+
+-- Funcion: calcular promedio participacion
+create or replace function sojg_pct_prom_participacion_mensual(
+    p_id_club in number,
+    p_mes     in number,
+    p_anno    in number
+) return varchar2 is
+    v_pct_adulto number := 0;
+    v_pct_joven  number := 0;
+    v_pct_nino   number := 0;
+    v_esperados  number;
+    v_faltas     number;
+    v_resultado  varchar2(200);
+begin
+    -- calcular % adultos
+    select nvl(sum(
+        (select count(*)
+         from sojg_historico_grupo_lectura hg
+         where (hg.id_club = cm.id_club)
+             and (hg.numero_de_grupo = cm.numero_de_grupo)
+             and (hg.fecha_inicio_membresia <= cm.fecha_reunion)
+             and (hg.fecha_fin is null or hg.fecha_fin >= cm.fecha_reunion))
+    ), 0)
+    into v_esperados
+    from sojg_calendario_mes cm
+    join sojg_grupo_de_lectura gl
+        on (cm.id_club = gl.id_club)
+        and (cm.numero_de_grupo = gl.numero_de_grupo)
+    where (cm.id_club = p_id_club)
+        and (extract(month from cm.fecha_reunion) = p_mes)
+        and (extract(year from cm.fecha_reunion) = p_anno)
+        and (gl.categoria_edad = 'Adulto')
+        and (cm.realizada = 'SI');
+
+    if (v_esperados > 0) then
+        select count(*)
+        into v_faltas
+        from sojg_inasistencia i
+        join sojg_calendario_mes cm
+            on (i.id_club = cm.id_club)
+            and (i.numero_de_grupo = cm.numero_de_grupo)
+            and (i.isbn_libro = cm.isbn_libro)
+            and (i.fecha_reunion = cm.fecha_reunion)
+        join sojg_grupo_de_lectura gl
+            on (cm.id_club = gl.id_club)
+            and (cm.numero_de_grupo = gl.numero_de_grupo)
+        where (cm.id_club = p_id_club)
+            and (extract(month from cm.fecha_reunion) = p_mes)
+            and (extract(year from cm.fecha_reunion) = p_anno)
+            and (gl.categoria_edad = 'Adulto')
+            and (cm.realizada = 'SI');
+
+        v_pct_adulto := round(100 - ((v_faltas / v_esperados) * 100), 2);
+    end if;
+
+    -- calcular % jovenes
+    select nvl(sum(
+        (select count(*)
+         from sojg_historico_grupo_lectura hg
+         where (hg.id_club = cm.id_club)
+             and (hg.numero_de_grupo = cm.numero_de_grupo)
+             and (hg.fecha_inicio_membresia <= cm.fecha_reunion)
+             and (hg.fecha_fin is null or hg.fecha_fin >= cm.fecha_reunion))
+    ), 0)
+    into v_esperados
+    from sojg_calendario_mes cm
+    join sojg_grupo_de_lectura gl
+        on (cm.id_club = gl.id_club)
+        and (cm.numero_de_grupo = gl.numero_de_grupo)
+    where (cm.id_club = p_id_club)
+        and (extract(month from cm.fecha_reunion) = p_mes)
+        and (extract(year from cm.fecha_reunion) = p_anno)
+        and (gl.categoria_edad = 'Joven')
+        and (cm.realizada = 'SI');
+
+    if (v_esperados > 0) then
+        select count(*)
+        into v_faltas
+        from sojg_inasistencia i
+        join sojg_calendario_mes cm
+            on (i.id_club = cm.id_club)
+            and (i.numero_de_grupo = cm.numero_de_grupo)
+            and (i.isbn_libro = cm.isbn_libro)
+            and (i.fecha_reunion = cm.fecha_reunion)
+        join sojg_grupo_de_lectura gl
+            on (cm.id_club = gl.id_club)
+            and (cm.numero_de_grupo = gl.numero_de_grupo)
+        where (cm.id_club = p_id_club)
+            and (extract(month from cm.fecha_reunion) = p_mes)
+            and (extract(year from cm.fecha_reunion) = p_anno)
+            and (gl.categoria_edad = 'Joven')
+            and (cm.realizada = 'SI');
+
+        v_pct_joven := round(100 - ((v_faltas / v_esperados) * 100), 2);
+    end if;
+
+    -- calcular % ninos
+    select nvl(sum(
+        (select count(*)
+         from sojg_historico_grupo_lectura hg
+         where (hg.id_club = cm.id_club)
+             and (hg.numero_de_grupo = cm.numero_de_grupo)
+             and (hg.fecha_inicio_membresia <= cm.fecha_reunion)
+             and (hg.fecha_fin is null or hg.fecha_fin >= cm.fecha_reunion))
+    ), 0)
+    into v_esperados
+    from sojg_calendario_mes cm
+    join sojg_grupo_de_lectura gl
+        on (cm.id_club = gl.id_club)
+        and (cm.numero_de_grupo = gl.numero_de_grupo)
+    where (cm.id_club = p_id_club)
+        and (extract(month from cm.fecha_reunion) = p_mes)
+        and (extract(year from cm.fecha_reunion) = p_anno)
+        and (gl.categoria_edad = 'Nino')
+        and (cm.realizada = 'SI');
+
+    if (v_esperados > 0) then
+        select count(*)
+        into v_faltas
+        from sojg_inasistencia i
+        join sojg_calendario_mes cm
+            on (i.id_club = cm.id_club)
+            and (i.numero_de_grupo = cm.numero_de_grupo)
+            and (i.isbn_libro = cm.isbn_libro)
+            and (i.fecha_reunion = cm.fecha_reunion)
+        join sojg_grupo_de_lectura gl
+            on (cm.id_club = gl.id_club)
+            and (cm.numero_de_grupo = gl.numero_de_grupo)
+        where (cm.id_club = p_id_club)
+            and (extract(month from cm.fecha_reunion) = p_mes)
+            and (extract(year from cm.fecha_reunion) = p_anno)
+            and (gl.categoria_edad = 'Nino')
+            and (cm.realizada = 'SI');
+
+        v_pct_nino := round(100 - ((v_faltas / v_esperados) * 100), 2);
+    end if;
+
+    -- armar resultado
+    v_resultado :=
+        'Adulto: ' || to_char(v_pct_adulto, '990.99') || '% | ' ||
+        'Joven: '  || to_char(v_pct_joven,  '990.99') || '% | ' ||
+        'Nino: '   || to_char(v_pct_nino,   '990.99') || '%';
+
+    return v_resultado;
+
+exception
+    when others then
+        return 'Error al procesar la participacion mensual.';
+end sojg_pct_prom_participacion_mensual;
+/
 
 -- ==========================================
 -- FASE 5: VISTAS 
