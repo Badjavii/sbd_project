@@ -175,7 +175,7 @@ create table sojg_lector (
     idiomas varchar2(200) not null,
     correo_electronico varchar2(200) not null,
     documento_identidad varchar2(50) not null,
-    autorizacion_representante char(1),
+    autorizacion_representante char(2),
     id_representante number,
     id_representante_lector number,
 
@@ -788,7 +788,7 @@ insert into sojg_historico_membresia (id_miembro, id_club, fecha_inicio_membresi
 
     -- miembro expulsado por inasistencia
 insert into sojg_historico_membresia (id_miembro, id_club, fecha_inicio_membresia, fecha_fin, estatus, motivo_retiro)
-    values (9, 8, to_date('20/02/2026', 'DD/MM/YYYY'), to_date('15/04/2026', 'DD/MM/YYYY'), 'Expulsada', 'Inasistencia');
+    values (9, 6, to_date('20/02/2026', 'DD/MM/YYYY'), to_date('15/04/2026', 'DD/MM/YYYY'), 'Expulsada', 'Inasistencia');
 
 commit;
 
