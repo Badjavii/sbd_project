@@ -16,7 +16,7 @@ create sequence sojg_seq_ciudad start with 1 increment by 1;
 -- Secuencias CLUB
 CREATE SEQUENCE sojg_seq_club START WITH 1 INCREMENT BY 1;
 -- Secuencia GRUPO_LECTURA
-create sequence sojg_seq_grupo_de_lectura with 1 increment by 1;
+create sequence sojg_seq_grupo_de_lectura start with 1 increment by 1;
 -- Secuencia OBRA
 CREATE SEQUENCE sojg_seq_obra START WITH 1 INCREMENT BY 1;
 -- Secuencia LECTOR
@@ -33,6 +33,7 @@ create table sojg_pais (
     id number default sojg_seq_pais.nextval,
     nombre varchar2(50) not null,
     moneda varchar2(10) not null,
+    nacionalidad varchar2(50) not null,
     continente varchar2(20) not null,
     
     constraint sojg_pk_pais primary key (id),
@@ -43,24 +44,22 @@ create table sojg_pais (
 -- Tabla INSTITUCION
 create table sojg_institucion (
     id number default sojg_seq_institucion.nextval,
-    nombre varchar2(100) not null,
+    nombre varchar2(200) not null,
     tipo varchar2(50) not null,
-    id_ciudad number not null,
     
     constraint sojg_pk_institucion primary key (id),
     constraint sojg_uq_institucion_nombre unique (nombre),
-    constraint sojg_fk_inst_ciudad foreign key (id_ciudad) references sojg_ciudad(id),
     constraint sojg_chk_inst_tipo check (tipo in ('Universidad','Colegio','Biblioteca','Escuela','Otro'))
 );
 
 -- Tabla AUTOR
 create table sojg_autor (
     id_autor number default sojg_seq_autor.nextval,
-    nombre varchar2(50) not null,
-    apellido varchar2(50) not null,
-    "2do_nombre" varchar2(50),
-    "2do_apellido" varchar2(50),
-    nombre_artistico varchar2(50),
+    nombre varchar2(100) not null,
+    apellido varchar2(100) not null,
+    "2do_nombre" varchar2(100),
+    "2do_apellido" varchar2(100),
+    nombre_artistico varchar2(150),
     
     constraint sojg_pk_autor primary key (id_autor)
 );
@@ -79,7 +78,7 @@ create table sojg_representante (
 -- Tabla CIUDAD
 create table sojg_ciudad (
     id number default sojg_seq_ciudad.nextval,
-    nombre varchar2(50) not null,
+    nombre varchar2(100) not null,
     id_pais number not null,
     
     constraint sojg_pk_ciudad primary key (id),
@@ -89,12 +88,12 @@ create table sojg_ciudad (
 -- Tabla LIBRO
 create table sojg_libro (
     isbn number,
-    titulo varchar2(100) not null,
+    titulo varchar2(300) not null,
     numero_paginas number not null,
     idioma varchar2(50) not null,
     anno_publicacion number(4) not null,
-    sinopsis clob not null,
-    tema_resumen varchar2(100) not null,
+    sinopsis varchar2(1500) not null,
+    tema_resumen varchar2(500) not null,
     tipo_narrativa varchar2(50) not null,
     primera_edicion char(2) not null,
     id_pais_publicacion number not null,
@@ -104,9 +103,10 @@ create table sojg_libro (
     constraint sojg_fk_libro_pais foreign key (id_pais_publicacion) references sojg_pais(id),
     constraint sojg_fk_libro_rec foreign key (isbn_continua_en) references sojg_libro(isbn),
     constraint sojg_chk_libro_pag check (numero_paginas > 0),
-    constraint sojg_chk_libro_anno check (anno_publicacion > 0),
+    constraint sogj_chk_libro_anno check (anno_publicacion != 0),
     constraint sojg_chk_libro_narra check (tipo_narrativa in ('Novela','Cuento','Mito','Leyenda','Fabula','Epopeya','Otro')),
-    constraint sojg_chk_libro_edic check (primera_edicion in ('SI','NO'))
+    constraint sojg_chk_libro_edic check (primera_edicion in ('SI','NO')),
+    constraint sojg_chk_libro_cont_dif check (isbn_continua_en != isbn)
 );
 
 -- Tabla AUTOR_LIBRO
@@ -121,7 +121,7 @@ create table sojg_autor_libro (
 
 -- Tabla CLUB
 CREATE TABLE sojg_club (
-  id_club number DEFAULT sojg_seq_club.nextval NOT NULL,
+  id_club number DEFAULT sojg_seq_club.nextval,
   nombre varchar2(200) NOT NULL UNIQUE,
   direccion varchar2(300) NOT NULL,
   codigo_postal varchar2(20) NOT NULL,
@@ -139,10 +139,10 @@ CREATE TABLE sojg_asociacion (
   id_club_2 number NOT NULL REFERENCES sojg_club(id_club),
   fecha_asociacion date NOT NULL,
   CONSTRAINT sojg_pk_asociacion PRIMARY KEY (id_club_1, id_club_2),
-  CONSTRAINT sojg_check_self_asociacion CHECK (id_club_1 != id_club_2),
   CONSTRAINT sojg_check_duplicate_asociacion CHECK (id_club_1 < id_club_2),
-  CONSTRAINT sojg_check_idioma_asociacion CHECK (id_club_1.idioma_del_club = id_club_2.idioma_del_club)
 );
+
+COMMENT ON TABLE sojg_asociacion IS 'La validacion de que dos clubes tengan el mismo idioma es externo a la base de datos';
 
 -- Table LECTOR
 create table sojg_lector (
@@ -263,7 +263,7 @@ create table sojg_calendario_mes (
     isbn_libro number not null,
     fecha_reunion date not null,
     realizada char(2) not null,
-    conclusiones clob,
+    conclusiones varchar2(1500),
     valoracion_final number(2, 1),
     ultima_discusion char(2),
     id_moderador number not null,
@@ -295,7 +295,7 @@ CREATE TABLE sojg_obra(
   id_obra number DEFAULT sojg_seq_obra.nextval NOT NULL,
   titulo_de_obra varchar2(300) NOT NULL,
   activa char(2) NOT NULL CONSTRAINT sojg_check_activa CHECK (activa IN ('SI', 'NO')),
-  descripcion_de_la_obra clob,
+  descripcion_de_la_obra varchar2(1500),
   costo_entrada number(10,2) CONSTRAINT sojg_check_costo CHECK (costo_entrada > 0),
   id_club number NOT NULL REFERENCES sojg_club(id_club),
 
@@ -345,6 +345,757 @@ create table sojg_mejor_actor (
 -- ==========================================
 -- FASE 3: INSERTS
 -- ==========================================
+
+-- Inserts PAIS (11 registros)
+insert into sojg_pais (nombre, moneda, continente) values ('España', 'EUR', 'Europa');
+insert into sojg_pais (nombre, moneda, continente) values ('Francia', 'EUR', 'Europa');
+insert into sojg_pais (nombre, moneda, continente) values ('Reino Unido', 'GBP', 'Europa');
+insert into sojg_pais (nombre, moneda, continente) values ('Grecia', 'EUR', 'Europa');
+insert into sojg_pais (nombre, moneda, continente) values ('Uruguay', 'UYU', 'America');
+insert into sojg_pais (nombre, moneda, continente) values ('Estados Unidos', 'USD', 'America');
+insert into sojg_pais (nombre, moneda, continente) values ('Rusia', 'RUB', 'Europa');
+insert into sojg_pais (nombre, moneda, continente) values ('Imperio Austrohungaro', 'EUR', 'Europa');
+insert into sojg_pais (nombre, moneda, continente) values ('Venezuela', 'VES', 'America');
+insert into sojg_pais (nombre, moneda, continente) values ('Mexico', 'MXN', 'America');
+insert into sojg_pais (nombre, moneda, continente) values ('Colombia', 'COP', 'America');
+
+commit;
+
+-- Inserts INSTITUCION (9 registros)
+insert into sojg_institucion (nombre, tipo) values ('Universidad Complutense de Madrid', 'Universidad');
+insert into sojg_institucion (nombre, tipo) values ('Biblioteca Nacional de Francia', 'Biblioteca');
+insert into sojg_institucion (nombre, tipo) values ('British Library', 'Biblioteca');
+insert into sojg_institucion (nombre, tipo) values ('New York Public Library', 'Biblioteca');
+insert into sojg_institucion (nombre, tipo) values ('Universidad Central de Venezuela', 'Universidad');
+insert into sojg_institucion (nombre, tipo) values ('UNAM - Biblioteca Central', 'Biblioteca');
+insert into sojg_institucion (nombre, tipo) values ('Biblioteca Luis Ángel Arango', 'Biblioteca');
+insert into sojg_institucion (nombre, tipo) values ('Portland State University', 'Universidad');
+insert into sojg_institucion (nombre, tipo) values ('Universidad Catolica Andres Bello', 'Universidad');
+
+commit;
+
+-- Inserts AUTOR 
+insert into sojg_autor (nombre, apellido) values ('Miguel', 'de Cervantes');
+insert into sojg_autor (nombre, apellido) values ('Victor', 'Hugo');
+insert into sojg_autor (nombre, apellido) values ('Charles', 'Dickens');
+insert into sojg_autor (nombre, apellido) values ('Charlotte', 'Bronte');
+insert into sojg_autor (nombre, apellido) values ('Homero', 'De Quios');
+insert into sojg_autor (nombre, apellido) values ('William', 'Shakespeare');
+insert into sojg_autor (nombre, apellido) values ('Horacio', 'Quiroga');
+insert into sojg_autor (nombre, "2do_nombre", apellido) values ('Francis', 'Scott', 'Fitzgerald');
+insert into sojg_autor (nombre, apellido) values ('Fiodor', 'Dostoyevski');
+insert into sojg_autor (nombre, apellido) values ('Franz', 'Kafka');
+insert into sojg_autor (nombre, apellido) values ('Oscar', 'Wilde');
+insert into sojg_autor (nombre, apellido) values ('Bram', 'Stoker');
+insert into sojg_autor (nombre, apellido) values ('Mary', 'Shelley');
+insert into sojg_autor (nombre, apellido) values ('Albert', 'Camus');
+insert into sojg_autor (nombre, apellido) values ('John', 'Steinbeck');
+insert into sojg_autor (nombre, apellido) values ('Jane', 'Austen');
+
+commit;
+
+-- Inserts REPRESENTANTE (11 registros)
+inset into sojg_representante (documento_identidad, nombre, apellido) 
+    values ('V-12345678', 'Maria', 'Gonzalez');
+inset into sojg_representante (documento_identidad, nombre, apellido) 
+    values ('V-23456789', 'Carlos', 'Perez');
+inset into sojg_representante (documento_identidad, nombre, apellido) 
+    values ('E-34567890', 'Sophie', 'Dubois');
+inset into sojg_representante (documento_identidad, nombre, apellido) 
+    values ('E-45678901', 'James', 'Mitchell');
+inset into sojg_representante (documento_identidad, nombre, apellido) 
+    values ('V-56789012', 'Rosa', 'Hernandez');
+inset into sojg_representante (documento_identidad, nombre, apellido) 
+    values ('E-67890123', 'Pierre', 'Leclerc');
+inset into sojg_representante (documento_identidad, nombre, apellido) 
+    values ('E-78901234', 'Elena', 'Volkova');
+inset into sojg_representante (documento_identidad, nombre, apellido) 
+    values ('C-89012345', 'Wei', 'Zhang');
+inset into sojg_representante (documento_identidad, nombre, apellido) 
+    values ('E-90123456', 'Carmen', 'Torres');
+inset into sojg_representante (documento_identidad, nombre, apellido) 
+    values ('M-01234567', 'Alejandro', 'Ramirez');
+inset into sojg_representante (documento_identidad, nombre, apellido) 
+    values ('E-11223344', 'Isabella', 'Martin');
+
+commit;
+
+-- Inserts CIUDAD (9 registros)
+insert into sojg_ciudad (nombre, id_pais) values ('Madrid', 1);
+insert into sojg_ciudad (nombre, id_pais) values ('Paris', 2);
+insert into sojg_ciudad (nombre, id_pais) values ('Londres', 3);
+insert into sojg_ciudad (nombre, id_pais) values ('Nueva York', 6);
+insert into sojg_ciudad (nombre, id_pais) values ('Caracas', 9);
+insert into sojg_ciudad (nombre, id_pais) values ('Ciudad de Mexico', 10);
+insert into sojg_ciudad (nombre, id_pais) values ('Bogota', 11);
+insert into sojg_ciudad (nombre, id_pais) values ('Portland', 6);
+insert into sojg_ciudad (nombre, id_pais) values ('moscu', 7);
+
+commit;
+
+-- Inserts LIBRO (16 registros)
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
+values (978001, 'Don Quijote de la Mancha', 863, 'Español', 1605,
+'Alonso Quijano, un hidalgo manchego de mediana edad, enloquece leyendo libros de caballerias y decide convertirse en caballero andante bajo el nombre de Don Quijote de la Mancha. Acompañado de su fiel escudero Sancho Panza, un labrador ingenuo y pragmatico, emprende tres salidas en busca de aventuras para defender a los debiles y deshacer entuertos. Sus aventuras, marcadas por la confusion entre la fantasia y la realidad, lo llevan a enfrentarse con molinos de viento que cree gigantes, rebaños que confunde con ejercitos y ventas que toma por castillos. La novela explora temas como la locura, la identidad, la justicia y el idealismo frente al pragmatismo, convirtiendose en una critica y homenaje simultaneo a los libros de caballerias.',
+'Caballeria', 'Novela', 'SI', 1);
+
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
+values (978002, 'Los miserables', 1200, 'Frances', 1862,
+'Jean Valjean, un ex presidiario que cumplio condena por robar pan, intenta reconstruir su vida bajo una identidad falsa mientras es perseguido implacablemente por el inspector Javert. A traves de su historia se entrelazan las vidas de Fantine, una madre soltera que cae en la miseria, y Cosette, su hija adoptada por Valjean. La novela transcurre en el turbulento Paris del siglo XIX, entre la miseria de los barrios bajos, la revolucion de 1832 y los ideales republicanos. Hugo retrata con profundidad la injusticia social, la redencion moral y la lucha entre el bien y el mal en una sociedad marcada por la desigualdad extrema.',
+'Injusticia social', 'Novela', 'SI', 2);
+
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
+values (978003, 'Historia de dos ciudades', 450, 'Ingles', 1859,
+'Ambientada en Londres y Paris durante la Revolucion Francesa, la novela sigue las vidas de Charles Darnay, un aristocrata frances que renuncia a su titulo, y Sydney Carton, un abogado ingles alcoholico pero brillante, ambos enamorados de Lucie Manette. El doctor Manette, padre de Lucie, fue encarcelado injustamente en la Bastilla durante dieciocho años. Con la revolucion en marcha, Darnay es arrestado y condenado a la guillotina. Carton, en un acto supremo de amor y sacrificio, ocupa su lugar. Dickens retrata la violencia y el caos revolucionario mientras explora temas de resurreccion, sacrificio y la dualidad humana.',
+'Revolucion Francesa', 'Novela', 'SI', 3);
+
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
+values (978004, 'Jane Eyre', 500, 'Ingles', 1847,
+'Jane Eyre es una huerfana inglesa que crece en condiciones de pobreza y maltrato, primero en casa de sus tios y luego en el rigido internado Lowood. Tras graduarse, se convierte en institutriz en Thornfield Hall, residencia del misterioso señor Rochester, de quien se enamora. Su relacion se ve obstaculizada por un terrible secreto que Rochester oculta en el atico de la mansion. Jane, guiada por su fuerte sentido moral e independencia, debe elegir entre el amor y sus principios. La novela es pionera en retratar la conciencia femenina y la busqueda de identidad e igualdad en la Inglaterra victoriana.',
+'Romance y drama', 'Novela', 'SI', 3);
+
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
+values (978005, 'La Iliada', 600, 'Griego Antiguo', 800,
+'La Iliada narra los acontecimientos de las ultimas semanas de la guerra de Troya, desencadenada por el rapto de Helena, esposa del rey espartano Menelao, a manos del principe troyano Paris. El poema se centra en la colera de Aquiles, el mas grande guerrero griego, quien se retira del combate tras una disputa con Agamenon. Su alejamiento provoca grandes perdidas entre los griegos, hasta que la muerte de su amigo Patroclo lo impulsa a volver al campo de batalla. El poema culmina con el enfrentamiento entre Aquiles y el heroe troyano Hector, y la entrega del cuerpo de este a su padre Priamo.',
+'Guerra', 'Epopeya', 'NO', 4);
+
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
+values (978006, 'Hamlet', 200, 'Ingles', 1603,
+'El principe Hamlet de Dinamarca recibe la visita del fantasma de su padre, quien le revela que fue asesinado por su propio hermano Claudio, quien ahora ocupa el trono y se ha casado con la madre de Hamlet, Gertrudis. Obsesionado con la venganza pero paralizado por la duda y la reflexion filosofica, Hamlet simula locura mientras elabora un plan para confirmar la culpa de Claudio. A traves de sus famosos monologos, la obra explora la traicion, la corrupcion moral, la muerte y la indecision. La tragedia culmina en un violento desenlace que arrastra a casi todos los personajes principales.',
+'Venganza', 'Otro', 'NO', 3);
+
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
+values (978007, 'Cuentos de amor de locura y de muerte', 150, 'Español', 1917,
+'Coleccion de cuentos del escritor uruguayo Horacio Quiroga ambientados principalmente en la selva misionera argentina. Los relatos exploran con crudeza y precisión los limites entre la vida y la muerte, la locura, la pasion amorosa y la violencia de la naturaleza. Entre los cuentos mas destacados se encuentran El almohadon de plumas, A la deriva y La gallina degollada. Quiroga retrata personajes atrapados por fuerzas que los superan, ya sean enfermedades, obsesiones o el entorno hostil. Su prosa directa e intensa anticipa el realismo magico latinoamericano y lo consagra como maestro del cuento hispanoamericano.',
+'Muerte y tragedia', 'Cuento', 'SI', 5);
+
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
+values (978008, 'El gran Gatsby', 218, 'Ingles', 1925,
+'Nick Carraway narra la historia de Jay Gatsby, un misterioso millonario que organiza lujosas fiestas en su mansion de Long Island con la esperanza de reencontrarse con Daisy Buchanan, su amor del pasado ahora casada con el arrogante Tom Buchanan. Ambientada en el Nueva York de los años veinte, la novela retrata el esplendor y la decadencia del sueno americano, la superficialidad de la clase alta y la imposibilidad de recuperar el pasado. A traves de la obsesion romantica de Gatsby, Fitzgerald critica la corrupcion moral detras de la riqueza y el vacio existencial de una sociedad dominada por las apariencias.',
+'Decadencia americana', 'Novela', 'SI', 6);
+
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
+values (978009, 'Crimen y castigo', 600, 'Ruso', 1866,
+'Rodion Raskolnikov, un estudiante ruso en situacion de extrema pobreza, desarrolla una teoria segun la cual ciertas personas extraordinarias tienen el derecho moral de transgredir la ley en beneficio de la humanidad. Guiado por esta conviccion, asesina a una anciana usurera y a su hermana. Sin embargo, el peso psicologico del crimen lo lleva al borde de la locura. El investigador Porfiry Petrovich lo acorrala intelectualmente mientras Sonya, una joven obligada a prostituirse, le ofrece redencion espiritual. La novela explora con profundidad la culpa, el libre albedrio, la redencion y la naturaleza del mal.',
+'Culpa y redencion', 'Novela', 'SI', 7);
+
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
+values (978010, 'La metamorfosis', 100, 'Aleman', 1915,
+'Gregor Samsa, un viajante de comercio que sostiene economicamente a su familia, amanece un dia convertido en un enorme insecto. Incapaz de trabajar y de comunicarse, se convierte en una carga para su familia, que inicialmente intenta adaptarse a la situacion pero progresivamente lo rechaza. Su hermana Grete, quien al principio lo cuida con dedicacion, termina pidiendo que lo eliminen. La novela de Kafka es una alegoría sobre la alienacion, la deshumanizacion en la sociedad moderna y el papel del individuo en la familia y en el sistema productivo. Su transformacion fisica refleja la invisibilidad que ya sufria en vida.',
+'Aislamiento', 'Novela', 'NO', 8);
+
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
+values (978011, 'El retrato de Dorian Gray', 250, 'Ingles', 1890,
+'Dorian Gray, un joven de extraordinaria belleza en el Londres victoriano, desea que un retrato suyo envieje en su lugar mientras el permanece joven para siempre. Su deseo se cumple misteriosamente. Bajo la influencia del cinico Lord Henry Wotton, Dorian se entrega al hedonismo y a la corrupcion moral sin consecuencias fisicas visibles, mientras su retrato refleja cada pecado y la degradacion de su alma. Wilde construye una novela filosofica sobre la vanidad, la etica estetica y la dualidad entre apariencia y realidad. El desenlace revela que la verdadera belleza no puede separarse de la virtud moral.',
+'Vanidad', 'Novela', 'SI', 3);
+
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
+values (978012, 'Dracula', 400, 'Ingles', 1897,
+'Jonathan Harker, un joven abogado ingles, viaja a Transilvania para cerrar una transaccion inmobiliaria con el Conde Dracula, un noble misterioso que resulta ser un vampiro centenario. Dracula se traslada a Londres donde comienza a acechar a Mina Murray, prometida de Harker, y a su amiga Lucy Westenra. Un grupo de valientes, liderado por el profesor Van Helsing, se une para cazar y destruir al vampiro. La novela, narrada a traves de diarios, cartas y articulos de periodico, mezcla horror gotico con temas victorianos sobre sexualidad, pureza, supersticion y el choque entre lo racional y lo sobrenatural.',
+'Terror', 'Novela', 'SI', 3);
+
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
+values (978013, 'Frankenstein', 280, 'Ingles', 1818,
+'Victor Frankenstein, un joven cientifico suizo obsesionado con los secretos de la vida y la muerte, logra crear un ser humano a partir de partes de cadaveres. Al ver la criatura que ha creado, huye horrorizado, abandonandola a su suerte. La criatura, rechazada por todos, aprende a hablar y a leer por cuenta propia, pero al no encontrar amor ni aceptacion se convierte en un ser vengativo. Exige a Frankenstein que le cree una companera, y ante la negativa desata una serie de tragedias. Shelley explora temas como la responsabilidad cientifica, el rechazo social, la soledad y los peligros de jugar a ser Dios.',
+'Ciencia ficcion', 'Novela', 'SI', 3);
+
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
+values (978014, 'El extranjero', 120, 'Frances', 1942,
+'Meursault, un empleado frances que vive en Argelia, recibe la noticia de la muerte de su madre sin mostrar ninguna emocion aparente. Dias despues, en la playa, mata a un arabe en circunstancias confusas. Durante el juicio, la sociedad lo condena menos por el crimen que por su indiferencia emocional ante la muerte de su madre. Enfrentado a la pena de muerte, Meursault reflexiona sobre el absurdo de la existencia humana y la indiferencia del universo. Camus construye una novela filosofica sobre el existencialismo y el absurdo, cuestionando los valores morales y sociales convencionales a traves de un protagonista radicalmente honesto.',
+'Absurdo', 'Novela', 'SI', 2);
+
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
+values (978015, 'De ratones y hombres', 110, 'Ingles', 1937,
+'George Milton y Lennie Small son dos trabajadores migrantes que recorren California durante la Gran Depresion en busca de empleo. George es inteligente y pragmatico; Lennie es un hombre de enorme fuerza fisica pero con discapacidad intelectual que no controla su propia fuerza. Ambos comparten el sueno de ahorrar dinero para comprar su propia tierra y vivir de manera independiente. Al llegar a un rancho a trabajar, una serie de conflictos con otros personajes, especialmente con la esposa del jefe, desemboca en una tragedia inevitable. Steinbeck retrata la amistad, la soledad y la fragilidad del sueno americano.',
+'Amistad', 'Novela', 'SI', 6);
+
+insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
+values (978016, 'Orgullo y prejuicio', 430, 'Ingles', 1813,
+'Elizabeth Bennet, la segunda de cinco hermanas de una familia de clase media en la Inglaterra rural, conoce al orgulloso y rico Mr. Darcy en un baile. Su primer encuentro esta marcado por el desagrado mutuo. A medida que se van conociendo, ambos deben superar sus propios prejuicios y el orgullo que les impide reconocer sus verdaderos sentimientos. Mientras las hermanas Bennet enfrentan presiones sociales para casarse bien, la novela satiriza las convenciones matrimoniales de la epoca. Austen construye una comedia de costumbres que critica con ingenio la sociedad inglesa y reivindica el matrimonio basado en el amor y el respeto mutuo.',
+'Romance', 'Novela', 'SI', 3);
+
+commit;
+
+-- Inserts AUTOR_LIBRO (16 registros) 
+insert into sojg_autor_libro (id_autor, isbn_libro) values (1, 978001);
+insert into sojg_autor_libro (id_autor, isbn_libro) values (2, 978002);
+insert into sojg_autor_libro (id_autor, isbn_libro) values (3, 978003);
+insert into sojg_autor_libro (id_autor, isbn_libro) values (4, 978004);
+insert into sojg_autor_libro (id_autor, isbn_libro) values (5, 978005);
+insert into sojg_autor_libro (id_autor, isbn_libro) values (6, 978006);
+insert into sojg_autor_libro (id_autor, isbn_libro) values (7, 978007);
+insert into sojg_autor_libro (id_autor, isbn_libro) values (8, 978008);
+insert into sojg_autor_libro (id_autor, isbn_libro) values (9, 978009);
+insert into sojg_autor_libro (id_autor, isbn_libro) values (10, 978010);
+insert into sojg_autor_libro (id_autor, isbn_libro) values (11, 978011);
+insert into sojg_autor_libro (id_autor, isbn_libro) values (12, 978012);
+insert into sojg_autor_libro (id_autor, isbn_libro) values (13, 978013);
+insert into sojg_autor_libro (id_autor, isbn_libro) values (14, 978014);
+insert into sojg_autor_libro (id_autor, isbn_libro) values (15, 978015);
+insert into sojg_autor_libro (id_autor, isbn_libro) values (16, 978016);
+
+commit;
+
+-- Inserts CLUB
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ("Club de Lectura de la Biblioteca Los Palos Grandes", 'Calle Los Palos Grandes, Caracas', '1060', 'Español', 1, 'SI', 1);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ("Club de Lectura de la Biblioteca Nacional de España", 'Paseo de Recoletos, Madrid', '28001', 'Español', 2, 'NO', 2);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ("Strand Book Store Book Clubs", '828 Broadway, New York', '10003', 'Inglés', 3, 'SI', 3);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ("Club de Lectura de la Librería El Péndulo", 'Av. Presidente Masaryk 111, Ciudad de México', '11560', 'Español', 4, 'NO', 4);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ("Powell's Book Clubs", '1005 W Burnside St, Portland', '97209', 'Inglés', 5, 'SI', 5);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ('Club de Lectores del Banco de la República-Biblioteca Luis Ángel Arango', 'Calle 11 #4-14, Bogotá', '11001', 'Español', 6, 'NO', 6);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ('Shakespeare and Company Reading Group', '37 Rue de la Bûcherie, Paris', '75005', 'Francés', 7, 'SI', 7);
+INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ('Club de Lectura de la Biblioteca Vasconcelos', 'Av. Cuitláhuac 2000, Ciudad de México', '02000', 'Español', 8, 'NO', 8);
+
+commit;
+
+-- Inserts ASOCIACION
+    -- asociaciones en espanol (clubes 1,2,4,6,8)
+insert into sojg_asociacion (id_club_1, id_club_2, fecha_asociacion) values (1, 2, to_date('15/01/2026', 'DD/MM/YYYY'));
+insert into sojg_asociacion (id_club_1, id_club_2, fecha_asociacion) values (1, 4, to_date('15/01/2026', 'DD/MM/YYYY'));
+insert into sojg_asociacion (id_club_1, id_club_2, fecha_asociacion) values (1, 6, to_date('20/01/2026', 'DD/MM/YYYY'));
+insert into sojg_asociacion (id_club_1, id_club_2, fecha_asociacion) values (1, 8, to_date('20/01/2026', 'DD/MM/YYYY'));
+insert into sojg_asociacion (id_club_1, id_club_2, fecha_asociacion) values (2, 4, to_date('01/02/2026', 'DD/MM/YYYY'));
+insert into sojg_asociacion (id_club_1, id_club_2, fecha_asociacion) values (2, 6, to_date('01/02/2026', 'DD/MM/YYYY'));
+insert into sojg_asociacion (id_club_1, id_club_2, fecha_asociacion) values (2, 8, to_date('10/02/2026', 'DD/MM/YYYY'));
+insert into sojg_asociacion (id_club_1, id_club_2, fecha_asociacion) values (4, 6, to_date('10/02/2026', 'DD/MM/YYYY'));
+insert into sojg_asociacion (id_club_1, id_club_2, fecha_asociacion) values (4, 8, to_date('15/02/2026', 'DD/MM/YYYY'));
+insert into sojg_asociacion (id_club_1, id_club_2, fecha_asociacion) values (6, 8, to_date('15/02/2026', 'DD/MM/YYYY'));
+
+    -- asociaciones en ingles (clubes 3,5)
+insert into sojg_asociacion (id_club_1, id_club_2, fecha_asociacion) values (3, 5, to_date('01/03/2026', 'DD/MM/YYYY'));
+
+commit;
+
+-- Inserts LECTOR 
+    -- mayores de 25 (grupo adulto)
+insert into sojg_lector (nombre, apellido, fecha_nacimiento, idiomas, correo_electronico, documento_identidad)
+    values ('Andres', 'Bolivar', to_date('15/03/1990', 'DD/MM/YYYY'), 'Espanol', 'andres.bolivar@gmail.com', 'V-15234567');
+insert into sojg_lector (nombre, apellido, fecha_nacimiento, idiomas, correo_electronico, documento_identidad)
+    values ('Claire', 'Dupont', to_date('22/07/1985', 'DD/MM/YYYY'), 'Frances, Ingles', 'claire.dupont@gmail.com', 'E-22345678');
+insert into sojg_lector (nombre, apellido, fecha_nacimiento, idiomas, correo_electronico, documento_identidad)
+    values ('Diego', 'Morales', to_date('10/11/1978', 'DD/MM/YYYY'), 'Espanol, Ingles', 'diego.morales@gmail.com', 'C-33456789');
+insert into sojg_lector (nombre, apellido, fecha_nacimiento, idiomas, correo_electronico, documento_identidad)
+    values ('Natasha', 'Ivanova', to_date('05/06/1995', 'DD/MM/YYYY'), 'Ruso, Ingles', 'natasha.ivanova@gmail.com', 'E-44567890');
+insert into sojg_lector (nombre, apellido, fecha_nacimiento, idiomas, correo_electronico, documento_identidad)
+    values ('Samuel', 'Johnson', to_date('30/01/1982', 'DD/MM/YYYY'), 'Ingles', 'samuel.johnson@gmail.com', 'E-55678901');
+insert into sojg_lector (nombre, apellido, fecha_nacimiento, idiomas, correo_electronico, documento_identidad)
+    values ('Valentina', 'Cruz', to_date('18/09/1998', 'DD/MM/YYYY'), 'Espanol', 'valentina.cruz@gmail.com', 'V-66789012');
+
+    -- entre 13 y 25 (grupo joven)
+insert into sojg_lector (nombre, apellido, fecha_nacimiento, idiomas, correo_electronico, documento_identidad)
+    values ('', '', to_date('', 'DD/MM/YYYY'), 'Espanol', 'lucas.fernandez@gmail.com', 'V-77890123');
+insert into sojg_lector (nombre, apellido, fecha_nacimiento, idiomas, correo_electronico, documento_identidad)
+    values ('', '', to_date('', 'DD/MM/YYYY'), 'Frances, Espanol', 'emma.laurent@gmail.com', 'E-88901234');
+insert into sojg_lector (nombre, apellido, fecha_nacimiento, idiomas, correo_electronico, documento_identidad)
+    values ('', '', to_date('', 'DD/MM/YYYY'), 'Espanol', 'sofia.herrera@gmail.com', 'M-99012345');
+
+    -- menores de 12 (grupo ninos) con representante 
+insert into sojg_lector (nombre, apellido, fecha_nacimiento, idiomas, correo_electronico, documento_identidad, autorizacion_representante, id_representante)
+    values ('', '', to_date('', 'DD/MM/YYYY'), 'Espanol', 'mateo.gonzalez@gmail.com', 'V-10234567', 'S', 1);
+insert into sojg_lector (nombre, apellido, fecha_nacimiento, idiomas, correo_electronico, documento_identidad, autorizacion_representante, id_representante_lector)
+    values ('', '', to_date('', 'DD/MM/YYYY'), 'Ingles', 'mia.mitchell@gmail.com', 'E-20345678', 'S', 4);
+
+commit;
+
+-- Inserts TELEFONO
+insert into sojg_telefono (codigo, numero, tipo, id_miembro) values (58, '4121234567', 'Celular', 1);
+insert into sojg_telefono (codigo, numero, tipo, id_miembro) values (33, '612345678', 'Celular', 2);
+insert into sojg_telefono (codigo, numero, tipo, id_miembro) values (57, '3001234567', 'Celular', 3);
+insert into sojg_telefono (codigo, numero, tipo, id_miembro) values (7, '9161234567', 'Celular', 4);
+insert into sojg_telefono (codigo, numero, tipo, id_miembro) values (1, '2121234567', 'Casa', 5);
+insert into sojg_telefono (codigo, numero, tipo, id_miembro) values (58, '4249876543', 'Celular', 6);
+insert into sojg_telefono (codigo, numero, tipo, id_miembro) values (58, '4261234567', 'Celular', 7);
+insert into sojg_telefono (codigo, numero, tipo, id_miembro) values (33, '698765432', 'Celular', 8);
+insert into sojg_telefono (codigo, numero, tipo, id_miembro) values (52, '5541234567', 'Celular', 9);
+insert into sojg_telefono (codigo, numero, tipo, id_miembro) values (58, '2121234567', 'Casa', 10);
+insert into sojg_telefono (codigo, numero, tipo, id_miembro) values (44, '7911234567', 'Celular', 11);
+
+commit;
+
+-- Inserts PREFERENCIA_LECTURA
+    -- miembro 1 (Andres)
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (1, 978001, 1);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (1, 978007, 2);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (1, 978014, 3);
+
+    -- miembro 2 (Claire)
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (2, 978002, 1);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (2, 978014, 2);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (2, 978016, 3);
+
+    -- miembro 3 (Diego)
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (3, 978003, 1);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (3, 978006, 2);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (3, 978011, 3);
+
+    -- miembro 4 (Natasha)
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (4, 978009, 1);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (4, 978010, 2);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (4, 978012, 3);
+
+    -- miembro 5 (Samuel)
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (5, 978008, 1);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (5, 978015, 2);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (5, 978004, 3);
+
+    -- miembro 6 (Valentina)
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (6, 978012, 1);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (6, 978013, 2);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (6, 978011, 3);
+
+    -- miembro 7 (Lucas)
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (7, 978005, 1);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (7, 978006, 2);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (7, 978001, 3);
+
+    -- miembro 8 (Emma)
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (8, 978016, 1);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (8, 978004, 2);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (8, 978002, 3);
+
+    -- miembro 9 (Sofia)
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (9, 978007, 1);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (9, 978010, 2);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (9, 978014, 3);
+
+    -- miembro 10 (Mateo)
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (10, 978005, 1);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (10, 978001, 2);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (10, 978006, 3);
+
+    -- miembro 11 (Mia)
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (11, 978004, 1);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (11, 978016, 2);
+insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (11, 978003, 3);
+
+commit;
+
+-- Inserts GRUPO_DE_LECTURA
+    -- club 1
+insert into sojg_grupo_de_lectura (id_club, numero_de_grupo, fecha_de_creacion, categoria_edad, dia_reunion, hora_inicio)
+    values (1, 101, to_date('10/01/2026', 'DD/MM/YYYY'), 'Adulto',  'Lunes',     18.00);
+insert into sojg_grupo_de_lectura (id_club, numero_de_grupo, fecha_de_creacion, categoria_edad, dia_reunion, hora_inicio)
+    values (1, 102, to_date('12/01/2026', 'DD/MM/YYYY'), 'Nino',    'Miercoles', 17.15);
+
+    -- club 2
+insert into sojg_grupo_de_lectura (id_club, numero_de_grupo, fecha_de_creacion, categoria_edad, dia_reunion, hora_inicio)
+    values (2, 201, to_date('15/01/2026', 'DD/MM/YYYY'), 'Joven',   'Martes',    17.30);
+insert into sojg_grupo_de_lectura (id_club, numero_de_grupo, fecha_de_creacion, categoria_edad, dia_reunion, hora_inicio)
+    values (2, 202, to_date('15/01/2026', 'DD/MM/YYYY'), 'Adulto',  'Jueves',    19.00);
+
+    -- club 3
+insert into sojg_grupo_de_lectura (id_club, numero_de_grupo, fecha_de_creacion, categoria_edad, dia_reunion, hora_inicio)
+    values (3, 301, to_date('01/02/2026', 'DD/MM/YYYY'), 'Adulto',  'Viernes',   18.30);
+
+    -- club 4
+insert into sojg_grupo_de_lectura (id_club, numero_de_grupo, fecha_de_creacion, categoria_edad, dia_reunion, hora_inicio)
+    values (4, 401, to_date('10/02/2026', 'DD/MM/YYYY'), 'Adulto',  'Martes',    18.50);
+insert into sojg_grupo_de_lectura (id_club, numero_de_grupo, fecha_de_creacion, categoria_edad, dia_reunion, hora_inicio)
+    values (4, 402, to_date('12/02/2026', 'DD/MM/YYYY'), 'Nino',    'Jueves',    17.00);
+
+    -- club 5
+insert into sojg_grupo_de_lectura (id_club, numero_de_grupo, fecha_de_creacion, categoria_edad, dia_reunion, hora_inicio)
+    values (5, 501, to_date('20/02/2026', 'DD/MM/YYYY'), 'Joven',   'Lunes',     17.45);
+insert into sojg_grupo_de_lectura (id_club, numero_de_grupo, fecha_de_creacion, categoria_edad, dia_reunion, hora_inicio)
+    values (5, 502, to_date('20/02/2026', 'DD/MM/YYYY'), 'Adulto', 'Miercoles', 18.00);
+
+    -- club 6
+insert into sojg_grupo_de_lectura (id_club, numero_de_grupo, fecha_de_creacion, categoria_edad, dia_reunion, hora_inicio)
+    values (6, 601, to_date('01/03/2026', 'DD/MM/YYYY'), 'Joven',   'Viernes',   17.30);
+insert into sojg_grupo_de_lectura (id_club, numero_de_grupo, fecha_de_creacion, categoria_edad, dia_reunion, hora_inicio)
+    values (6, 602, to_date('05/03/2026', 'DD/MM/YYYY'), 'Adulto',  'Lunes',     19.00);
+
+    -- club 7
+insert into sojg_grupo_de_lectura (id_club, numero_de_grupo, fecha_de_creacion, categoria_edad, dia_reunion, hora_inicio)
+    values (7, 701, to_date('15/03/2026', 'DD/MM/YYYY'), 'Adulto',  'Miercoles', 18.00);
+
+    -- club 8
+insert into sojg_grupo_de_lectura (id_club, numero_de_grupo, fecha_de_creacion, categoria_edad, dia_reunion, hora_inicio)
+    values (8, 801, to_date('22/03/2026', 'DD/MM/YYYY'), 'Nino',    'Martes',    17.00);
+
+commit;
+
+-- Inserts HISTORICO_MEMBRESIA
+    -- miembros en clubes independientes (cuota = SI)
+insert into sojg_historico_membresia (id_miembro, id_club, fecha_inicio_membresia, fecha_fin, estatus, motivo_retiro)
+    values (1, 1, to_date('01/01/2026', 'DD/MM/YYYY'), null, 'Activa', null);
+insert into sojg_historico_membresia (id_miembro, id_club, fecha_inicio_membresia, fecha_fin, estatus, motivo_retiro)
+    values (2, 7, to_date('05/01/2026', 'DD/MM/YYYY'), null, 'Activa', null);
+insert into sojg_historico_membresia (id_miembro, id_club, fecha_inicio_membresia, fecha_fin, estatus, motivo_retiro)
+    values (3, 3, to_date('10/01/2026', 'DD/MM/YYYY'), null, 'Activa', null);
+insert into sojg_historico_membresia (id_miembro, id_club, fecha_inicio_membresia, fecha_fin, estatus, motivo_retiro)
+    values (4, 5, to_date('15/01/2026', 'DD/MM/YYYY'), null, 'Morosa', null);
+insert into sojg_historico_membresia (id_miembro, id_club, fecha_inicio_membresia, fecha_fin, estatus, motivo_retiro)
+    values (5, 1, to_date('20/01/2026', 'DD/MM/YYYY'), null, 'Activa', null);
+
+    -- miembros en clubes dependientes (cuota = NO)
+insert into sojg_historico_membresia (id_miembro, id_club, fecha_inicio_membresia, fecha_fin, estatus, motivo_retiro)
+    values (6, 6, to_date('01/02/2026', 'DD/MM/YYYY'), null, 'Activa', null);
+insert into sojg_historico_membresia (id_miembro, id_club, fecha_inicio_membresia, fecha_fin, estatus, motivo_retiro)
+    values (7, 2, to_date('10/02/2026', 'DD/MM/YYYY'), null, 'Activa', null);
+
+    -- miembro retirado voluntariamente
+insert into sojg_historico_membresia (id_miembro, id_club, fecha_inicio_membresia, fecha_fin, estatus, motivo_retiro)
+    values (8, 4, to_date('15/02/2026', 'DD/MM/YYYY'), to_date('01/05/2026', 'DD/MM/YYYY'), 'Retirada', 'Voluntario');
+
+    -- miembro expulsado por inasistencia
+insert into sojg_historico_membresia (id_miembro, id_club, fecha_inicio_membresia, fecha_fin, estatus, motivo_retiro)
+    values (9, 8, to_date('20/02/2026', 'DD/MM/YYYY'), to_date('15/04/2026', 'DD/MM/YYYY'), 'Expulsada', 'Inasistencia');
+
+commit;
+
+-- Inserts HISTORICO_GRUPO_LECTURA
+    -- miembro 1 (Andres - adulto) → club 1, grupo 101 (Adulto)
+insert into sojg_historico_grupo_lectura (id_club, numero_de_grupo, fecha_inicio_membresia, id_miembro, fecha_inicio, fecha_fin)
+    values (1, 101, to_date('01/01/2026', 'DD/MM/YYYY'), 1, to_date('11/01/2026', 'DD/MM/YYYY'), null);
+
+    -- miembro 2 (Claire - adulta) → club 7, grupo 701 (Adulto)
+insert into sojg_historico_grupo_lectura (id_club, numero_de_grupo, fecha_inicio_membresia, id_miembro, fecha_inicio, fecha_fin)
+    values (7, 701, to_date('05/01/2026', 'DD/MM/YYYY'), 2, to_date('16/01/2026', 'DD/MM/YYYY'), null);
+
+    -- miembro 3 (Diego - adulto) → club 3, grupo 301 (Adulto)
+insert into sojg_historico_grupo_lectura (id_club, numero_de_grupo, fecha_inicio_membresia, id_miembro, fecha_inicio, fecha_fin)
+    values (3, 301, to_date('10/01/2026', 'DD/MM/YYYY'), 3, to_date('02/02/2026', 'DD/MM/YYYY'), null);
+
+    -- miembro 4 (Natasha - adulta) → club 5, grupo 502 (Adulto)
+insert into sojg_historico_grupo_lectura (id_club, numero_de_grupo, fecha_inicio_membresia, id_miembro, fecha_inicio, fecha_fin)
+    values (5, 502, to_date('15/01/2026', 'DD/MM/YYYY'), 4, to_date('21/02/2026', 'DD/MM/YYYY'), null);
+
+    -- miembro 5 (Samuel - adulto) → club 1, grupo 101 (Adulto)
+insert into sojg_historico_grupo_lectura (id_club, numero_de_grupo, fecha_inicio_membresia, id_miembro, fecha_inicio, fecha_fin)
+    values (1, 101, to_date('20/01/2026', 'DD/MM/YYYY'), 5, to_date('21/01/2026', 'DD/MM/YYYY'), null);
+
+    -- miembro 6 (Valentina - adulta) → club 6, grupo 602 (Adulto)
+insert into sojg_historico_grupo_lectura (id_club, numero_de_grupo, fecha_inicio_membresia, id_miembro, fecha_inicio, fecha_fin)
+    values (6, 602, to_date('01/02/2026', 'DD/MM/YYYY'), 6, to_date('06/03/2026', 'DD/MM/YYYY'), null);
+
+    -- miembro 7 (Lucas - joven) → club 2, grupo 201 (Joven)
+insert into sojg_historico_grupo_lectura (id_club, numero_de_grupo, fecha_inicio_membresia, id_miembro, fecha_inicio, fecha_fin)
+    values (2, 201, to_date('10/02/2026', 'DD/MM/YYYY'), 7, to_date('16/03/2026', 'DD/MM/YYYY'), null);
+
+    -- miembro 8 (Emma - joven) → club 4, grupo retirada con fecha_fin
+insert into sojg_historico_grupo_lectura (id_club, numero_de_grupo, fecha_inicio_membresia, id_miembro, fecha_inicio, fecha_fin)
+    values (4, 402, to_date('15/02/2026', 'DD/MM/YYYY'), 8, to_date('16/02/2026', 'DD/MM/YYYY'), to_date('01/05/2026', 'DD/MM/YYYY'));
+
+    -- miembro 9 (Sofia - joven) → club 6, grupo 601 (Joven)
+insert into sojg_historico_grupo_lectura (id_club, numero_de_grupo, fecha_inicio_membresia, id_miembro, fecha_inicio, fecha_fin)
+    values (6, 601, to_date('20/02/2026', 'DD/MM/YYYY'), 9, to_date('06/03/2026', 'DD/MM/YYYY'), null);
+
+commit;
+
+-- Inserts PAGO_MEMBRESIA
+    -- miembro 1 → club 1 (independiente) pago inicial
+insert into sojg_pago_membresia (fecha, monto, id_miembro, id_club)
+    values (to_date('01/01/2026', 'DD/MM/YYYY'), 100.00, 1, 1);
+
+    -- miembro 2 → club 7 (independiente) pago inicial
+insert into sojg_pago_membresia (fecha, monto, id_miembro, id_club)
+    values (to_date('05/01/2026', 'DD/MM/YYYY'), 100.00, 2, 7);
+
+    -- miembro 3 → club 3 (independiente) pago inicial
+insert into sojg_pago_membresia (fecha, monto, id_miembro, id_club)
+    values (to_date('10/01/2026', 'DD/MM/YYYY'), 100.00, 3, 3);
+
+    -- miembro 4 → club 5 (independiente) pago inicial - estatus moroso
+insert into sojg_pago_membresia (fecha, monto, id_miembro, id_club)
+    values (to_date('15/01/2026', 'DD/MM/YYYY'), 100.00, 4, 5);
+
+    -- miembro 5 → club 1 (independiente) pago inicial
+insert into sojg_pago_membresia (fecha, monto, id_miembro, id_club)
+    values (to_date('20/01/2026', 'DD/MM/YYYY'), 100.00, 5, 1);
+
+    -- miembro 8 → club 7 (independiente) pago antes de retirarse
+insert into sojg_pago_membresia (fecha, monto, id_miembro, id_club)
+    values (to_date('15/02/2026', 'DD/MM/YYYY'), 100.00, 8, 7);
+
+    -- miembro 1 → club 1 segundo pago (renovacion)
+insert into sojg_pago_membresia (fecha, monto, id_miembro, id_club)
+    values (to_date('01/04/2026', 'DD/MM/YYYY'), 100.00, 1, 1);
+
+    -- miembro 3 → club 3 segundo pago (renovacion)
+insert into sojg_pago_membresia (fecha, monto, id_miembro, id_club)
+    values (to_date('10/04/2026', 'DD/MM/YYYY'), 100.00, 3, 3);
+
+    -- miembro 5 → club 1 segundo pago (renovacion)
+insert into sojg_pago_membresia (fecha, monto, id_miembro, id_club)
+    values (to_date('20/04/2026', 'DD/MM/YYYY'), 100.00, 5, 1);
+
+commit;
+
+-- Inserts CALENDARIO_MES (9 registros)
+    -- club 1, grupo 101 (Adulto) - Don Quijote - reunion 1
+insert into sojg_calendario_mes (id_club, numero_de_grupo, isbn_libro, fecha_reunion, realizada, conclusiones, valoracion_final, ultima_discusion, id_moderador)
+    values (1, 101, 978001, to_date('13/04/2026', 'DD/MM/YYYY'), 'SI',
+    'El grupo inicio el analisis de Don Quijote de la Mancha con gran entusiasmo. Se debatio extensamente sobre la naturaleza de la locura del protagonista y si esta representa una critica social de Cervantes hacia la sociedad española del siglo XVII. Varios miembros argumentaron que la locura de Alonso Quijano es en realidad una forma de lucidez disfrazada, una manera de escapar de una realidad que considera injusta e insatisfactoria. Se discutio tambien el rol de Sancho Panza como contrapunto pragmatico al idealismo desmedido de su amo. El moderador propuso para la proxima sesion profundizar en los episodios de los molinos de viento y la batalla con los rebaños como simbolos del conflicto entre fantasia y realidad.',
+    null, 'NO', 1);
+
+    -- club 1, grupo 101 (Adulto) - Don Quijote - reunion 2 (ultima)
+insert into sojg_calendario_mes (id_club, numero_de_grupo, isbn_libro, fecha_reunion, realizada, conclusiones, valoracion_final, ultima_discusion, id_moderador)
+    values (1, 101, 978001, to_date('27/04/2026', 'DD/MM/YYYY'), 'SI',
+    'En esta sesion final sobre Don Quijote el grupo alcanzo conclusiones muy enriquecedoras. Se establecio por consenso que la obra trasciende el genero de parodia caballeresca para convertirse en una profunda reflexion sobre la identidad humana, la busqueda de proposito y los limites entre la razon y la imaginacion. Los miembros destacaron la vigencia del texto en el mundo contemporaneo, donde el conflicto entre el idealismo y el pragmatismo sigue siendo relevante. Se valoro especialmente la construccion psicologica de ambos personajes principales y la evolucion que experimentan a lo largo de la obra. El grupo concluyo que Cervantes logra humanizar tanto al loco idealista como al escudero materialista, haciendo que el lector simpatice con ambos. Valoracion final acordada por unanimidad.',
+    4.9, 'SI', 1);
+
+    -- club 2, grupo 201 (Joven) - Los miserables
+insert into sojg_calendario_mes (id_club, numero_de_grupo, isbn_libro, fecha_reunion, realizada, conclusiones, valoracion_final, ultima_discusion, id_moderador)
+    values (2, 201, 978002, to_date('21/04/2026', 'DD/MM/YYYY'), 'SI',
+    'La sesion sobre Los miserables genero un debate apasionado entre los jovenes lectores. El grupo se enfoco principalmente en la figura de Jean Valjean como simbolo de redencion y segunda oportunidad, contrastando su trayectoria con la rigidez moral del inspector Javert. Se discutio si la obsesion de Javert representa la ley sin justicia o simplemente el cumplimiento del deber llevado al extremo. Los participantes mostraron gran interes en la sub trama de Fantine y Cosette, identificando en ella una critica vigente sobre la vulnerabilidad de la mujer en sociedades patriarcales y clasistas. Varios lectores conectaron los temas de la novela con desigualdades sociales actuales, lo que enriquecio enormemente el debate. El grupo valoro la capacidad de Victor Hugo para construir personajes con una profundidad psicologica extraordinaria.',
+    4.5, 'SI', 7);
+
+    -- club 3, grupo 301 (Adulto) - Historia de dos ciudades
+insert into sojg_calendario_mes (id_club, numero_de_grupo, isbn_libro, fecha_reunion, realizada, conclusiones, valoracion_final, ultima_discusion, id_moderador)
+    values (3, 301, 978003, to_date('24/04/2026', 'DD/MM/YYYY'), 'SI',
+    'El analisis de Historia de dos ciudades estuvo marcado por el interes del grupo en la precision historica con la que Dickens retrata la Revolucion Francesa. Se debatio ampliamente sobre el paralelismo entre Londres y Paris como representaciones de dos mundos en tension, uno estable aunque imperfecto y otro en llamas pero buscando justicia. El sacrificio final de Sydney Carton genero la discusion mas profunda de la sesion, dividiendo al grupo entre quienes lo consideran un acto de amor sublime y quienes lo ven como una rendicion ante una vida que no supo construir. Se destaco la maestria de Dickens para crear tension narrativa y su habilidad para humanizar tanto a victimas como a verdugos en el contexto revolucionario. El grupo cerro con una reflexion sobre si la violencia puede ser alguna vez un instrumento legitimo de cambio social.',
+    4.2, 'SI', 3);
+
+    -- club 4, grupo 401 (Adulto) - El gran Gatsby
+insert into sojg_calendario_mes (id_club, numero_de_grupo, isbn_libro, fecha_reunion, realizada, conclusiones, valoracion_final, ultima_discusion, id_moderador)
+    values (4, 401, 978008, to_date('05/05/2026', 'DD/MM/YYYY'), 'SI',
+    'La discusion sobre El gran Gatsby fue una de las mas animadas que ha tenido este grupo. El debate central giro en torno a si Gatsby es una victima del sueno americano o su maximo exponente. Un sector del grupo defendio que Gatsby encarna la promesa de movilidad social y reinvencion personal que caracteriza al sueno americano, mientras que otro sector argumento que su tragedia revela precisamente la falsedad de esa promesa para quienes no nacen en la clase privilegiada. Se analizo tambien el rol de Nick Carraway como narrador poco confiable y la forma en que su admiracion por Gatsby tiñe la historia. La figura de Daisy fue objeto de debate encendido, con opiniones divididas sobre si es una victima de su entorno o una persona moralmente cobarde. El grupo concluyo que Fitzgerald construye una critica devastadora de la superficialidad y el vacio moral de la clase alta norteamericana.',
+    4.0, 'SI', 4);
+
+    -- club 6, grupo 601 (Joven) - El retrato de Dorian Gray
+insert into sojg_calendario_mes (id_club, numero_de_grupo, isbn_libro, fecha_reunion, realizada, conclusiones, valoracion_final, ultima_discusion, id_moderador)
+    values (6, 601, 978011, to_date('08/05/2026', 'DD/MM/YYYY'), 'SI',
+    'La sesion sobre El retrato de Dorian Gray capturo la atencion de los jovenes lectores desde el primer momento. El grupo debatio con entusiasmo sobre la figura de Lord Henry como catalizador de la corrupcion de Dorian, preguntandose si Dorian tiene verdadera agencia moral o si es simplemente una victima de la influencia de su mentor. Se exploro la dimension filosofica de la obra, particularmente la idea de que la belleza exterior puede existir desconectada de la virtud interior, y las consecuencias de vivir unicamente para el placer estetico. Varios lectores destacaron la vigencia del tema en la era de las redes sociales, donde la apariencia frecuentemente se prioriza sobre la sustancia. El personaje de Basil Hallward fue interpretado como la conciencia moral de la obra, el unico que ama a Dorian de manera genuina y desinteresada. Valoracion final acordada por el grupo.',
+    4.6, 'SI', 9);
+
+    -- club 7, grupo 701 (Adulto) - Dracula
+insert into sojg_calendario_mes (id_club, numero_de_grupo, isbn_libro, fecha_reunion, realizada, conclusiones, valoracion_final, ultima_discusion, id_moderador)
+    values (7, 701, 978012, to_date('13/05/2026', 'DD/MM/YYYY'), 'SI',
+    'El analisis de Dracula resulto ser una sesion extraordinariamente rica en interpretaciones. El grupo exploro la novela tanto desde su dimension de horror gotico como desde una lectura simbolica mas profunda. Se debatio la figura del conde Dracula como representacion del otro, del extranjero amenazante que invade la sociedad victoriana con su sexualidad no normativa y su desafio a las instituciones. Varios miembros señalaron que el miedo al vampiro en la novela refleja las ansiedades de la epoca victoriana ante la modernidad, la sexualidad femenina liberada y la perdida de certezas religiosas. La estructura epistolar de la obra fue valorada como un recurso narrativo brillante que crea tension a traves de la acumulacion de perspectivas. El grupo también discutio el rol de las mujeres en la novela, especialmente el contraste entre Mina Murray como modelo de virtud victoriana y Lucy Westenra como figura de transgresion.',
+    4.4, 'SI', 2);
+
+    -- club 6, grupo 602 (Adulto) - El extranjero - no realizada
+insert into sojg_calendario_mes (id_club, numero_de_grupo, isbn_libro, fecha_reunion, realizada, conclusiones, valoracion_final, ultima_discusion, id_moderador)
+    values (6, 602, 978014, to_date('18/05/2026', 'DD/MM/YYYY'), 'NO',
+    null, null, 'NO', 6);
+
+    -- club 1, grupo 102 (Nino) - La Iliada
+insert into sojg_calendario_mes (id_club, numero_de_grupo, isbn_libro, fecha_reunion, realizada, conclusiones, valoracion_final, ultima_discusion, id_moderador)
+    values (1, 102, 978005, to_date('22/04/2026', 'DD/MM/YYYY'), 'SI',
+    'La sesion sobre La Iliada con el grupo infantil fue una experiencia muy positiva y enriquecedora. El moderador adapto la discusion al nivel del grupo utilizando preguntas accesibles sobre los personajes y sus motivaciones. Los niños mostraron gran interes en la figura de Aquiles, especialmente en su conflicto entre el orgullo personal y la lealtad hacia sus compañeros. Se discutio el concepto de la amistad entre Aquiles y Patroclo como motor emocional de la trama, y como la perdida de un ser querido puede transformar a una persona. El grupo tambien reflexiono sobre las consecuencias de la guerra y el sufrimiento que genera en todos los bandos. Fue llamativo que varios niños empatizaron con Hector el defensor de Troya tanto como con los heroes griegos, lo que abrio una conversacion sobre la perspectiva y la empatia. Valoracion acordada por el grupo adaptada a su comprension de la obra.',
+    4.1, 'SI', 1);
+
+commit;
+
+-- Inserts INASISTENCIA (9 registros)
+    -- club 1, grupo 101 - Don Quijote reunion 1 - falta miembro 5
+insert into sojg_inasistencia (id_club, numero_de_grupo, isbn_libro, fecha_reunion, id_miembro)
+    values (1, 101, 978001, to_date('13/04/2026', 'DD/MM/YYYY'), 5);
+
+    -- club 1, grupo 101 - Don Quijote reunion 2 - falta miembro 5
+insert into sojg_inasistencia (id_club, numero_de_grupo, isbn_libro, fecha_reunion, id_miembro)
+    values (1, 101, 978001, to_date('27/04/2026', 'DD/MM/YYYY'), 5);
+
+    -- club 2, grupo 201 - Los miserables - falta miembro 7
+insert into sojg_inasistencia (id_club, numero_de_grupo, isbn_libro, fecha_reunion, id_miembro)
+    values (2, 201, 978002, to_date('21/04/2026', 'DD/MM/YYYY'), 7);
+
+    -- club 3, grupo 301 - Historia de dos ciudades - falta miembro 3
+insert into sojg_inasistencia (id_club, numero_de_grupo, isbn_libro, fecha_reunion, id_miembro)
+    values (3, 301, 978003, to_date('24/04/2026', 'DD/MM/YYYY'), 3);
+
+    -- club 4, grupo 401 - El gran Gatsby - falta miembro 4
+insert into sojg_inasistencia (id_club, numero_de_grupo, isbn_libro, fecha_reunion, id_miembro)
+    values (4, 401, 978008, to_date('05/05/2026', 'DD/MM/YYYY'), 4);
+
+    -- club 6, grupo 601 - El retrato de Dorian Gray - falta miembro 9
+insert into sojg_inasistencia (id_club, numero_de_grupo, isbn_libro, fecha_reunion, id_miembro)
+    values (6, 601, 978011, to_date('08/05/2026', 'DD/MM/YYYY'), 9);
+
+    -- club 7, grupo 701 - Dracula - falta miembro 2
+insert into sojg_inasistencia (id_club, numero_de_grupo, isbn_libro, fecha_reunion, id_miembro)
+    values (7, 701, 978012, to_date('13/05/2026', 'DD/MM/YYYY'), 2);
+
+    -- club 1, grupo 102 - La Iliada - falta miembro 10 (Mateo, nino)
+insert into sojg_inasistencia (id_club, numero_de_grupo, isbn_libro, fecha_reunion, id_miembro)
+    values (1, 102, 978005, to_date('22/04/2026', 'DD/MM/YYYY'), 10);
+
+    -- club 1, grupo 101 - Don Quijote reunion 1 - falta miembro 1
+insert into sojg_inasistencia (id_club, numero_de_grupo, isbn_libro, fecha_reunion, id_miembro)
+    values (1, 101, 978001, to_date('13/04/2026', 'DD/MM/YYYY'), 1);
+
+commit;
+
+-- Inserts OBRA (9 registros)
+    -- obra 1: basada en Don Quijote - club 1
+insert into sojg_obra (titulo_de_obra, activa, descripcion_de_la_obra, costo_entrada, id_club)
+    values ('La locura de Alonso', 'SI',
+    'Adaptacion teatral de Don Quijote de la Mancha que explora la tension entre el idealismo desmedido y la realidad cotidiana. La obra sigue a Alonso Quijano en su transformacion en el caballero andante Don Quijote, acompañado de su fiel escudero Sancho Panza. A traves de una serie de episodios comicos y conmovedores, la produccion invita al publico a reflexionar sobre los limites entre la locura y la sabiduria, entre el sueno y la realidad. La puesta en escena incorpora elementos visuales que evocan la España del siglo XVII mientras mantiene una narrativa accesible y emocionalmente resonante para el publico contemporaneo. Entre actos el publico participara votando sobre las decisiones que toma Don Quijote, lo que puede cambiar el desenlace de algunos episodios. La obra tiene una duracion aproximada de dos horas con un intermedio y esta recomendada para todos los publicos.',
+    15.00, 1);
+
+    -- obra 2: basada en Dracula - club 7
+insert into sojg_obra (titulo_de_obra, activa, descripcion_de_la_obra, costo_entrada, id_club)
+    values ('La noche del conde', 'SI',
+    'Produccion teatral de suspenso y terror gotico basada en la novela Dracula de Bram Stoker. La obra recrea el viaje de Jonathan Harker a Transilvania y la subsequent invasion del conde Dracula a la sociedad londinense. La puesta en escena utiliza efectos de iluminacion y sonido para crear una atmosfera opresiva y perturbadora que mantiene al publico en tension durante toda la representacion. La adaptacion pone especial enfasis en la dimension psicologica del horror, explorando el miedo al otro y a lo desconocido como fuerzas que amenazan el orden establecido. Entre actos el publico respondera preguntas sobre los crimenes del conde y votara sobre las estrategias que el grupo de cazavampiros debe seguir, con los resultados influyendo en el desenlace de la obra. La produccion cuenta con vestuario de epoca victoriana y una escenografia que recrea tanto los castillos de Transilvania como las calles neblinas de Londres.',
+    20.00, 7);
+
+    -- obra 3: basada en Hamlet - club 3
+insert into sojg_obra (titulo_de_obra, activa, descripcion_de_la_obra, costo_entrada, id_club)
+    values ('El principe de Dinamarca', 'SI',
+    'Adaptacion contemporanea de Hamlet de William Shakespeare que traslada la tragedia del principe danes a un entorno corporativo moderno. El conflicto central entre Hamlet y su tio Claudio, quien ha usurpado el trono asesinando a su padre, se reinterpreta como una lucha de poder en una gran corporacion familiar. La obra conserva los temas esenciales del original shakesperiano: la venganza, la traicion, la corrupcion del poder y la paralisis ante la accion. Los celebres monologos de Hamlet son adaptados al lenguaje contemporaneo manteniendo su profundidad filosofica. La interaccion con el publico incluye momentos donde los asistentes votan sobre si Hamlet debe actuar o continuar investigando, alterando el ritmo y algunos desenlaces de la trama. La produccion busca demostrar que los dilemas morales que enfrenta Hamlet son tan vigentes hoy como lo eran en la Inglaterra isabelina.',
+    18.00, 3);
+
+    -- obra 4: basada en Frankenstein - club 5 (no activa)
+insert into sojg_obra (titulo_de_obra, activa, descripcion_de_la_obra, costo_entrada, id_club)
+    values ('La criatura', 'NO',
+    'Produccion teatral basada en Frankenstein de Mary Shelley que explora los limites eticos de la ciencia y la responsabilidad del creador hacia su creacion. La obra sigue al joven cientifico Victor Frankenstein en su obsesion por vencer a la muerte, creando un ser humano a partir de partes de cadaveres. El punto de vista narrativo alterna entre Frankenstein y su criatura, permitiendo al publico empatizar con ambos personajes y comprender las motivaciones que los llevan al conflicto inevitable. La produccion destaca la soledad y el rechazo como fuerzas corruptoras capaces de transformar la inocencia en monstruosidad. Esta obra ya no esta en cartelera activa pero fue una de las producciones mas aclamadas del club, recibiendo excelentes valoraciones del publico en todas sus presentaciones.',
+    12.00, 5);
+
+    -- obra 5: basada en Los miserables - club 2
+insert into sojg_obra (titulo_de_obra, activa, descripcion_de_la_obra, costo_entrada, id_club)
+    values ('Jean Valjean', 'SI',
+    'Adaptacion teatral de Los miserables de Victor Hugo que sigue la extraordinaria historia de redencion de Jean Valjean, un ex presidiario que lucha por reconstruir su vida con dignidad en una sociedad que no esta dispuesta a perdonar su pasado. La obra captura los momentos mas emotivos de la novela, desde la transformacion moral de Valjean tras el acto de generosidad del obispo Myriel hasta su sacrificio final por la felicidad de Cosette y Marius. La produccion incluye escenas que retratan la miseria de los barrios parisinos del siglo XIX y la violencia de la revolucion de 1832, creando un contraste visual poderoso entre la belleza del ideal republicano y el costo humano de su busqueda. Entre actos el publico vota sobre dilemas morales inspirados en la novela, como si Valjean debe entregarse para salvar a un inocente, con los resultados influyendo en como se desarrollan algunas escenas.',
+    10.00, 2);
+
+    -- obra 6: basada en El extranjero - club 6
+insert into sojg_obra (titulo_de_obra, activa, descripcion_de_la_obra, costo_entrada, id_club)
+    values ('El absurdo de Meursault', 'SI',
+    'Adaptacion teatral de El extranjero de Albert Camus que lleva al escenario la historia del indiferente Meursault, un hombre que vive al margen de las convenciones emocionales y morales de su sociedad. La obra explora con crudeza la filosofia del absurdo camusiana, planteando al publico preguntas incmodas sobre la autenticidad, la libertad y la inevitabilidad de la muerte. La puesta en escena utiliza un escenario minimalista que refuerza la sensacion de vacio existencial que permea la obra. La actuacion de Meursault esta diseñada para generar incomodidad en el publico, cuestionando si la indiferencia emocional es un defecto moral o simplemente una forma distinta de estar en el mundo. Entre actos el publico participa en un simulacro de juicio donde debe decidir si condenaria a Meursault y por que razones, generando debates que revelan los prejuicios sociales que la novela critica.',
+    8.00, 6);
+
+    -- obra 7: basada en Crimen y castigo - club 1 (no activa)
+insert into sojg_obra (titulo_de_obra, activa, descripcion_de_la_obra, costo_entrada, id_club)
+    values ('La culpa de Raskolnikov', 'NO',
+    'Produccion teatral basada en Crimen y castigo de Fiodor Dostoyevski que explora el deterioro psicologico de Rodion Raskolnikov tras cometer un asesinato motivado por su teoria del hombre extraordinario. La obra se enfoca en el conflicto interno del protagonista, dividido entre la arrogancia intelectual que justifico su crimen y la culpa que lo consume desde adentro. La puesta en escena utiliza recursos expresionistas para representar el estado mental fragmentado de Raskolnikov, con escenas que oscilan entre la realidad y las alucinaciones. La figura del investigador Porfiry Petrovich es presentada como un antagonista sofisticado que utiliza la psicologia en lugar de la fuerza para acorralar al sospechoso. Esta produccion ya finalizo su temporada activa pero dejo una huella profunda en el publico que la presencio.',
+    14.00, 1);
+
+    -- obra 8: basada en Jane Eyre - club 4
+insert into sojg_obra (titulo_de_obra, activa, descripcion_de_la_obra, costo_entrada, id_club)
+    values ('La institutriz de Thornfield', 'SI',
+    'Adaptacion teatral de Jane Eyre de Charlotte Bronte que sigue la historia de una joven huerfana que se convierte en institutriz en la misteriosa mansion de Thornfield Hall. La obra captura la esencia del romance gothico original mientras enfatiza la extraordinaria fortaleza moral e independencia de Jane como protagonista. La relacion entre Jane y el tormentoso señor Rochester es presentada con toda su complejidad emocional, explorando como dos almas heridas encuentran en el otro un refugio y una provocacion simultaneos. El secreto del atico de Thornfield funciona como elemento de suspenso que mantiene al publico en tension hasta el desenlace. La produccion incluye momentos de interaccion donde el publico vota sobre las decisiones que Jane debe tomar, particularmente en el dilema central entre el amor y la integridad moral. La escenografia evoca con precision la oscura y romantica atmosfera de la Inglaterra victoriana.',
+    10.00, 4);
+
+    -- obra 9: basada en El gran Gatsby - club 3
+insert into sojg_obra (titulo_de_obra, activa, descripcion_de_la_obra, costo_entrada, id_club)
+    values ('El sueno de Gatsby', 'SI',
+    'Adaptacion teatral de El gran Gatsby de F. Scott Fitzgerald que recrea el esplendor y la decadencia de los años veinte norteamericanos. La obra sigue la obsesion de Jay Gatsby por recuperar el pasado y conquistar el amor de Daisy Buchanan, utilizando su misteriosa fortuna como instrumento de seduccion social. La puesta en escena recrea con lujo de detalles las extravagantes fiestas de la mansion de Gatsby en Long Island, creando un contraste visual deslumbrante con la grisacea realidad del valle de las cenizas. La adaptacion pone especial enfasis en la critica de Fitzgerald a la superficialidad y la corrupcion moral de la clase alta norteamericana. Entre actos el publico participa en dinamicas inspiradas en las fiestas de Gatsby, respondiendo preguntas sobre los personajes y votando sobre el desenlace de momentos clave de la trama. La produccion incluye musica de jazz de la epoca para crear una atmosfera autentica.',
+    16.00, 3);
+
+commit;
+
+-- Inserts LIBRO_REFERENCIADO_POR_LA_OBRA
+insert into sojg_libro_referenciado_por_la_obra (id_obra, id_libro) values (1, 978001);
+insert into sojg_libro_referenciado_por_la_obra (id_obra, id_libro) values (2, 978012);
+insert into sojg_libro_referenciado_por_la_obra (id_obra, id_libro) values (3, 978006);
+insert into sojg_libro_referenciado_por_la_obra (id_obra, id_libro) values (4, 978013);
+insert into sojg_libro_referenciado_por_la_obra (id_obra, id_libro) values (5, 978002);
+insert into sojg_libro_referenciado_por_la_obra (id_obra, id_libro) values (6, 978014);
+insert into sojg_libro_referenciado_por_la_obra (id_obra, id_libro) values (7, 978009);
+insert into sojg_libro_referenciado_por_la_obra (id_obra, id_libro) values (8, 978004);
+insert into sojg_libro_referenciado_por_la_obra (id_obra, id_libro) values (9, 978008);
+
+commit;
+
+-- Inserts ELENCO
+    -- obra 1 (club 1) - elenco de clubes 1,2,4,6,8 (asociados en espanol)
+insert into sojg_elenco (id_obra, id_miembro) values (1, 1);
+insert into sojg_elenco (id_obra, id_miembro) values (1, 5);
+insert into sojg_elenco (id_obra, id_miembro) values (1, 6);
+
+    -- obra 2 (club 7) - elenco de club 7
+insert into sojg_elenco (id_obra, id_miembro) values (2, 2);
+insert into sojg_elenco (id_obra, id_miembro) values (2, 7);
+
+    -- obra 3 (club 3) - elenco de clubes 3,5 (asociados en ingles)
+insert into sojg_elenco (id_obra, id_miembro) values (3, 3);
+insert into sojg_elenco (id_obra, id_miembro) values (3, 4);
+
+    -- obra 4 (club 5) - elenco de clubes 3,5
+insert into sojg_elenco (id_obra, id_miembro) values (4, 4);
+insert into sojg_elenco (id_obra, id_miembro) values (4, 3);
+
+    -- obra 5 (club 2) - elenco de clubes 1,2,4,6,8
+insert into sojg_elenco (id_obra, id_miembro) values (5, 7);
+insert into sojg_elenco (id_obra, id_miembro) values (5, 6);
+
+    -- obra 6 (club 6) - elenco de clubes 1,2,4,6,8
+insert into sojg_elenco (id_obra, id_miembro) values (6, 6);
+insert into sojg_elenco (id_obra, id_miembro) values (6, 9);
+
+    -- obra 7 (club 1) - elenco de clubes 1,2,4,6,8
+insert into sojg_elenco (id_obra, id_miembro) values (7, 1);
+insert into sojg_elenco (id_obra, id_miembro) values (7, 5);
+
+    -- obra 8 (club 4) - elenco de clubes 1,2,4,6,8
+insert into sojg_elenco (id_obra, id_miembro) values (8, 6);
+insert into sojg_elenco (id_obra, id_miembro) values (8, 9);
+
+    -- obra 9 (club 3) - elenco de clubes 3,5
+insert into sojg_elenco (id_obra, id_miembro) values (9, 3);
+insert into sojg_elenco (id_obra, id_miembro) values (9, 4);
+
+commit;
+
+-- Inserts PRESENTACION_DE_LA_OBRA (9 registros)
+    -- obra 1
+insert into sojg_presentacion_de_la_obra (id_obra, fecha, valoracion, cantidad_asistentes)
+    values (1, to_date('20/03/2026', 'DD/MM/YYYY'), 4.5, 80);
+
+    -- obra 2
+insert into sojg_presentacion_de_la_obra (id_obra, fecha, valoracion, cantidad_asistentes)
+    values (2, to_date('22/03/2026', 'DD/MM/YYYY'), 4.8, 95);
+
+    -- obra 3
+insert into sojg_presentacion_de_la_obra (id_obra, fecha, valoracion, cantidad_asistentes)
+    values (3, to_date('25/03/2026', 'DD/MM/YYYY'), 4.2, 60);
+
+    -- obra 4 (no activa - presentacion pasada)
+insert into sojg_presentacion_de_la_obra (id_obra, fecha, valoracion, cantidad_asistentes)
+    values (4, to_date('10/02/2026', 'DD/MM/YYYY'), 3.8, 45);
+
+    -- obra 5
+insert into sojg_presentacion_de_la_obra (id_obra, fecha, valoracion, cantidad_asistentes)
+    values (5, to_date('28/03/2026', 'DD/MM/YYYY'), 4.6, 70);
+
+    -- obra 6
+insert into sojg_presentacion_de_la_obra (id_obra, fecha, valoracion, cantidad_asistentes)
+    values (6, to_date('01/04/2026', 'DD/MM/YYYY'), 4.3, 55);
+
+    -- obra 7 (no activa - presentacion pasada)
+insert into sojg_presentacion_de_la_obra (id_obra, fecha, valoracion, cantidad_asistentes)
+    values (7, to_date('15/01/2026', 'DD/MM/YYYY'), 4.0, 40);
+
+    -- obra 8
+insert into sojg_presentacion_de_la_obra (id_obra, fecha, valoracion, cantidad_asistentes)
+    values (8, to_date('05/04/2026', 'DD/MM/YYYY'), 4.1, 65);
+
+    -- obra 9
+insert into sojg_presentacion_de_la_obra (id_obra, fecha, valoracion, cantidad_asistentes)
+    values (9, to_date('10/04/2026', 'DD/MM/YYYY'), 4.7, 90);
+
+commit;
+
+-- Inserts MEJOR_ACTOR (9 registros)
+    -- obra 1 presentacion 20/03/2026
+insert into sojg_mejor_actor (id_obra, id_miembro, fecha_presentacion, votos)
+    values (1, 1, to_date('20/03/2026', 'DD/MM/YYYY'), 45);
+insert into sojg_mejor_actor (id_obra, id_miembro, fecha_presentacion, votos)
+    values (1, 5, to_date('20/03/2026', 'DD/MM/YYYY'), 35);
+
+    -- obra 2 presentacion 22/03/2026
+insert into sojg_mejor_actor (id_obra, id_miembro, fecha_presentacion, votos)
+    values (2, 2, to_date('22/03/2026', 'DD/MM/YYYY'), 60);
+
+    -- obra 3 presentacion 25/03/2026
+insert into sojg_mejor_actor (id_obra, id_miembro, fecha_presentacion, votos)
+    values (3, 3, to_date('25/03/2026', 'DD/MM/YYYY'), 38);
+
+    -- obra 5 presentacion 28/03/2026
+insert into sojg_mejor_actor (id_obra, id_miembro, fecha_presentacion, votos)
+    values (5, 7, to_date('28/03/2026', 'DD/MM/YYYY'), 42);
+
+    -- obra 6 presentacion 01/04/2026 - empate
+insert into sojg_mejor_actor (id_obra, id_miembro, fecha_presentacion, votos)
+    values (6, 6, to_date('01/04/2026', 'DD/MM/YYYY'), 28);
+insert into sojg_mejor_actor (id_obra, id_miembro, fecha_presentacion, votos)
+    values (6, 9, to_date('01/04/2026', 'DD/MM/YYYY'), 28);
+
+    -- obra 9 presentacion 10/04/2026
+insert into sojg_mejor_actor (id_obra, id_miembro, fecha_presentacion, votos)
+    values (9, 3, to_date('10/04/2026', 'DD/MM/YYYY'), 55);
+
+commit;
 
 -- ==========================================
 -- FASE 4: FUNCIONES
