@@ -394,7 +394,7 @@ commit;
 -- FASE 3: INSERTS
 -- ==========================================
 
--- Inserts PAIS (11 registros)
+-- Inserts PAIS (11 registros) (ENTRADA)
 insert into sojg_pais (nombre, moneda, nacionalidad, continente) values ('España', 'EUR', 'Español', 'Europa');
 insert into sojg_pais (nombre, moneda, nacionalidad, continente) values ('Francia', 'EUR', 'Frances', 'Europa');
 insert into sojg_pais (nombre, moneda, nacionalidad, continente) values ('Reino Unido', 'GBP', 'Britanico', 'Europa');
@@ -409,7 +409,7 @@ insert into sojg_pais (nombre, moneda, nacionalidad, continente) values ('Colomb
 
 commit;
 
--- Inserts INSTITUCION (9 registros)
+-- Inserts INSTITUCION (9 registros) (ENTRADA)
 insert into sojg_institucion (nombre, tipo) values ('Universidad Complutense de Madrid', 'Universidad');
 insert into sojg_institucion (nombre, tipo) values ('Biblioteca Nacional de Francia', 'Biblioteca');
 insert into sojg_institucion (nombre, tipo) values ('British Library', 'Biblioteca');
@@ -422,7 +422,7 @@ insert into sojg_institucion (nombre, tipo) values ('Universidad Catolica Andres
 
 commit;
 
--- Inserts AUTOR 
+-- Inserts AUTOR  (ENTRADA)
 insert into sojg_autor (nombre, apellido) values ('Miguel', 'de Cervantes');
 insert into sojg_autor (nombre, apellido) values ('Victor', 'Hugo');
 insert into sojg_autor (nombre, apellido) values ('Charles', 'Dickens');
@@ -442,7 +442,7 @@ insert into sojg_autor (nombre, apellido) values ('Jane', 'Austen');
 
 commit;
 
--- Inserts REPRESENTANTE (11 registros)
+-- Inserts REPRESENTANTE (11 registros) (ENTRADA)
 insert into sojg_representante (documento_identidad, nombre, apellido) 
     values ('V-12345678', 'Maria', 'Gonzalez');
 insert into sojg_representante (documento_identidad, nombre, apellido) 
@@ -468,7 +468,7 @@ insert into sojg_representante (documento_identidad, nombre, apellido)
 
 commit;
 
--- Inserts CIUDAD (9 registros)
+-- Inserts CIUDAD (9 registros) (ENTRADA)
 insert into sojg_ciudad (nombre, id_pais) values ('Madrid', 1);
 insert into sojg_ciudad (nombre, id_pais) values ('Paris', 2);
 insert into sojg_ciudad (nombre, id_pais) values ('Londres', 3);
@@ -481,7 +481,7 @@ insert into sojg_ciudad (nombre, id_pais) values ('moscu', 7);
 
 commit;
 
--- Inserts LIBRO (16 registros)
+-- Inserts LIBRO (16 registros) (ENTRADA/SALIDA)
 insert into sojg_libro (isbn, titulo, numero_paginas, idioma, anno_publicacion, sinopsis, tema_resumen, tipo_narrativa, primera_edicion, id_pais_publicacion)
 values (978001, 'Don Quijote de la Mancha', 863, 'Español', 1605,
 'Alonso Quijano, un hidalgo manchego de mediana edad, enloquece leyendo libros de caballerias y decide convertirse en caballero andante bajo el nombre de Don Quijote de la Mancha. Acompañado de su fiel escudero Sancho Panza, un labrador ingenuo y pragmatico, emprende tres salidas en busca de aventuras para defender a los debiles y deshacer entuertos. Sus aventuras, marcadas por la confusion entre la fantasia y la realidad, lo llevan a enfrentarse con molinos de viento que cree gigantes, rebaños que confunde con ejercitos y ventas que toma por castillos. La novela explora temas como la locura, la identidad, la justicia y el idealismo frente al pragmatismo, convirtiendose en una critica y homenaje simultaneo a los libros de caballerias.',
@@ -564,7 +564,7 @@ values (978016, 'Orgullo y prejuicio', 430, 'Ingles', 1813,
 
 commit;
 
--- Inserts AUTOR_LIBRO (16 registros) 
+-- Inserts AUTOR_LIBRO (16 registros) (ENTRADA)
 insert into sojg_autor_libro (id_autor, isbn_libro) values (1, 978001);
 insert into sojg_autor_libro (id_autor, isbn_libro) values (2, 978002);
 insert into sojg_autor_libro (id_autor, isbn_libro) values (3, 978003);
@@ -584,7 +584,7 @@ insert into sojg_autor_libro (id_autor, isbn_libro) values (16, 978016);
 
 commit;
 
--- Inserts CLUB
+-- Inserts CLUB (ENTRADA)
 INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ('Club de Lectura de la Biblioteca Los Palos Grandes', 'Calle Los Palos Grandes, Caracas', '1060', 'Español', 1, 'SI', 1);
 INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ('Club de Lectura de la Biblioteca Nacional de España', 'Paseo de Recoletos, Madrid', '28001', 'Español', 2, 'NO', 2);
 INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion) VALUES ('Strand Book Store Book Clubs', '828 Broadway, New York', '10003', 'Inglés', 3, 'SI', 3);
@@ -596,7 +596,7 @@ INSERT INTO sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciu
 
 commit;
 
--- Inserts ASOCIACION
+-- Inserts ASOCIACION (ENTRADA)
     -- asociaciones en espanol (clubes 1,2,4,6,8)
 insert into sojg_asociacion (id_club_1, id_club_2, fecha_asociacion) values (1, 2, to_date('15/01/2026', 'DD/MM/YYYY'));
 insert into sojg_asociacion (id_club_1, id_club_2, fecha_asociacion) values (1, 4, to_date('15/01/2026', 'DD/MM/YYYY'));
@@ -614,7 +614,7 @@ insert into sojg_asociacion (id_club_1, id_club_2, fecha_asociacion) values (3, 
 
 commit;
 
--- Inserts LECTOR
+-- Inserts LECTOR (ENTRADA)
 -- mayores de 25 (grupo adulto)
 insert into sojg_lector (nombre, apellido, fecha_nacimiento, idiomas, correo_electronico, documento_identidad)
     values ('Andres', 'Bolivar', to_date('15/03/1990', 'DD/MM/YYYY'), 'Espanol', 'andres.bolivar@gmail.com', 'V-15234567');
@@ -645,7 +645,7 @@ insert into sojg_lector (nombre, apellido, fecha_nacimiento, idiomas, correo_ele
 
 commit;
 
--- Inserts TELEFONO
+-- Inserts TELEFONO (TELEFONO)
 insert into sojg_telefono (codigo, numero, tipo, id_miembro) values (58, '4121234567', 'Celular', 1);
 insert into sojg_telefono (codigo, numero, tipo, id_miembro) values (33, '612345678', 'Celular', 2);
 insert into sojg_telefono (codigo, numero, tipo, id_miembro) values (57, '3001234567', 'Celular', 3);
@@ -660,7 +660,7 @@ insert into sojg_telefono (codigo, numero, tipo, id_miembro) values (44, '791123
 
 commit;
 
--- Inserts PREFERENCIA_LECTURA
+-- Inserts PREFERENCIA_LECTURA (ENTRADA)
     -- miembro 1 (Andres)
 insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (1, 978001, 1);
 insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia) values (1, 978007, 2);
@@ -718,7 +718,7 @@ insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia)
 
 commit;
 
--- Inserts GRUPO_DE_LECTURA
+-- Inserts GRUPO_DE_LECTURA (ENTRADA)
     -- club 1
 insert into sojg_grupo_de_lectura (id_club, numero_de_grupo, fecha_de_creacion, categoria_edad, dia_reunion, hora_inicio)
     values (1, 101, to_date('10/01/2026', 'DD/MM/YYYY'), 'Adulto',  'Lunes',     18.00);
@@ -763,7 +763,7 @@ insert into sojg_grupo_de_lectura (id_club, numero_de_grupo, fecha_de_creacion, 
 
 commit;
 
--- Inserts HISTORICO_MEMBRESIA
+-- Inserts HISTORICO_MEMBRESIA (ENTRADA/SALIDA)
     -- miembros en clubes independientes (cuota = SI)
 insert into sojg_historico_membresia (id_miembro, id_club, fecha_inicio_membresia, fecha_fin, estatus, motivo_retiro)
     values (1, 1, to_date('01/01/2026', 'DD/MM/YYYY'), null, 'Activa', null);
@@ -792,7 +792,7 @@ insert into sojg_historico_membresia (id_miembro, id_club, fecha_inicio_membresi
 
 commit;
 
--- Inserts HISTORICO_GRUPO_LECTURA
+-- Inserts HISTORICO_GRUPO_LECTURA (ENTRADA/SALIDA)
     -- miembro 1 (Andres - adulto) → club 1, grupo 101 (Adulto)
 insert into sojg_historico_grupo_lectura (id_club, numero_de_grupo, fecha_inicio_membresia, id_miembro, fecha_inicio, fecha_fin)
     values (1, 101, to_date('01/01/2026', 'DD/MM/YYYY'), 1, to_date('11/01/2026', 'DD/MM/YYYY'), null);
@@ -831,7 +831,7 @@ insert into sojg_historico_grupo_lectura (id_club, numero_de_grupo, fecha_inicio
 
 commit;
 
--- Inserts PAGO_MEMBRESIA
+-- Inserts PAGO_MEMBRESIA (ENTRADA/SALIDA)
     -- miembro 1 → club 1 (independiente) pago inicial
 insert into sojg_pago_membresia (fecha, monto, id_miembro, id_club)
     values (to_date('01/01/2026', 'DD/MM/YYYY'), 100.00, 1, 1);
@@ -870,7 +870,7 @@ insert into sojg_pago_membresia (fecha, monto, id_miembro, id_club)
 
 commit;
 
--- Inserts CALENDARIO_MES (9 registros)
+-- Inserts CALENDARIO_MES (9 registros) (ENTRADA/SALIDA)
     -- club 1, grupo 101 (Adulto) - Don Quijote - reunion 1
 insert into sojg_calendario_mes (id_club, numero_de_grupo, isbn_libro, fecha_reunion, realizada, conclusiones, valoracion_final, ultima_discusion, id_moderador)
     values (1, 101, 978001, to_date('13/04/2026', 'DD/MM/YYYY'), 'SI',
@@ -926,7 +926,7 @@ insert into sojg_calendario_mes (id_club, numero_de_grupo, isbn_libro, fecha_reu
 
 commit;
 
--- Inserts INASISTENCIA (9 registros)
+-- Inserts INASISTENCIA (9 registros) (ENTRADA/SALIDA)
     -- club 1, grupo 101 - Don Quijote reunion 1 - falta miembro 5
 insert into sojg_inasistencia (id_club, numero_de_grupo, isbn_libro, fecha_reunion, id_miembro)
     values (1, 101, 978001, to_date('13/04/2026', 'DD/MM/YYYY'), 5);
@@ -965,7 +965,7 @@ insert into sojg_inasistencia (id_club, numero_de_grupo, isbn_libro, fecha_reuni
 
 commit;
 
--- Inserts OBRA (9 registros)
+-- Inserts OBRA (9 registros) (ENTRADA)
     -- obra 1: basada en Don Quijote - club 1
 insert into sojg_obra (titulo_de_obra, activa, descripcion_de_la_obra, costo_entrada, id_club)
     values ('La locura de Alonso', 'SI',
@@ -1022,7 +1022,7 @@ insert into sojg_obra (titulo_de_obra, activa, descripcion_de_la_obra, costo_ent
 
 commit;
 
--- Inserts LIBRO_REFERENCIADO_POR_LA_OBRA
+-- Inserts LIBRO_REFERENCIADO_POR_LA_OBRA (ENTRADA)
 insert into sojg_libro_referenciado_por_la_obra (id_obra, isbn_libro) values (1, 978001);
 insert into sojg_libro_referenciado_por_la_obra (id_obra, isbn_libro) values (2, 978012);
 insert into sojg_libro_referenciado_por_la_obra (id_obra, isbn_libro) values (3, 978006);
@@ -1035,7 +1035,7 @@ insert into sojg_libro_referenciado_por_la_obra (id_obra, isbn_libro) values (9,
 
 commit;
 
--- Inserts ELENCO
+-- Inserts ELENCO (ENTRADA)
     -- obra 1 (club 1) - elenco de clubes 1,2,4,6,8 (asociados en espanol)
 insert into sojg_elenco (id_obra, id_miembro) values (1, 1);
 insert into sojg_elenco (id_obra, id_miembro) values (1, 5);
@@ -1075,7 +1075,7 @@ insert into sojg_elenco (id_obra, id_miembro) values (9, 4);
 
 commit;
 
--- Inserts PRESENTACION_DE_LA_OBRA (9 registros)
+-- Inserts PRESENTACION_DE_LA_OBRA (9 registros) (ENTRADA/SALIDA)
     -- obra 1
 insert into sojg_presentacion_de_la_obra (id_obra, fecha, valoracion, cantidad_asistentes)
     values (1, to_date('20/03/2026', 'DD/MM/YYYY'), 4.5, 80);
@@ -1114,7 +1114,7 @@ insert into sojg_presentacion_de_la_obra (id_obra, fecha, valoracion, cantidad_a
 
 commit;
 
--- Inserts MEJOR_ACTOR (9 registros)
+-- Inserts MEJOR_ACTOR (9 registros) (SALIDA)
     -- obra 1 presentacion 20/03/2026
 insert into sojg_mejor_actor (id_obra, id_miembro, fecha_presentacion, votos)
     values (1, 1, to_date('20/03/2026', 'DD/MM/YYYY'), 45);
