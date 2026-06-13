@@ -10,7 +10,7 @@
  
 - [Modelo ER](https://lucid.app/lucidchart/f295fe16-2c4b-485c-86bb-b8abecd0147c/edit?invitationId=inv_946f68e9-7f35-4469-bb9a-051c10a3c469&page=0_0#).
 - [Modelo Lógico](https://docs.google.com/document/d/1k6KHs1k-uVeIcaNXYk8knks1_USBnejmJcKX5IYZ8hM/edit?tab=t.0).
-- [Modelo de SP y Triggers](https://docs.google.com/spreadsheets/d/1wS5L5LHMVl06eTIWO3JCnm3MAlxKfk_z/edit?usp=sharing&ouid=104236223785274007000&rtpof=true&sd=true).
+- [Modelo de SP y Triggers](https://docs.google.com/document/d/1GLFQiZeilZ2ODgOIeheRuctw8jozWk42wCpGTSL-44Y/edit?usp=sharing).
 - [Base de Datos Excel](https://docs.google.com/spreadsheets/d/1wS5L5LHMVl06eTIWO3JCnm3MAlxKfk_z/edit?usp=sharing&ouid=104236223785274007000&rtpof=true&sd=true).
 
 ## Conexión Remota al Servidor (Oracle 21c XE)
