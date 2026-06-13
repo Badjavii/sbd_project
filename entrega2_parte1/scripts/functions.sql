@@ -7,11 +7,31 @@ create or replace function sojg_conversion_monetaria (
     p_monto in number,
     p_moneda_origen in varchar2,
     p_tasa_cambio in number
-) return number is 
+) return number is
     v_monto_dolares number;
-begin 
+begin
+
+    -- validar que no se convierta USD a USD
+    if (upper(p_moneda_origen) = 'USD') then
+        raise_application_error(-20001, 'La moneda de origen ya es USD. No se requiere conversion.');
+    end if;
+
+    -- validar monto positivo
+    if (p_monto <= 0) then
+        raise_application_error(-20002, 'El monto debe ser mayor a cero.');
+    end if;
+    
+    -- validar tasa positiva
+    if (p_tasa_cambio <= 0) then
+        raise_application_error(-20003, 'La tasa de cambio debe ser mayor a cero.');
+    end if;
+    
     v_monto_dolares := p_monto * p_tasa_cambio;
     return round(v_monto_dolares, 2);
+
+exception
+    when others then
+        raise;
 end;
 /
 
