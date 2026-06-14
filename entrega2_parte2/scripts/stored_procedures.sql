@@ -1,158 +1,742 @@
--- SP 1: Registrar obra
-create or replace procedure sojg_sp_registrar_obra(
-    p_titulo in varchar2,
-    p_activa in char,
-    p_descripcion in varchar2,
-    p_costo in number,
-    p_id_club in number
-) is 
+-- ==========================================
+-- STORED PROCEDURES - CLUBES DE LECTURA
+-- Prefijo: sojg_
+-- ==========================================
+
+-- ==========================================
+-- ADMINISTRACION DE CLUBES
+-- ==========================================
+
+-- SP1: Registrar club
+create or replace procedure sojg_sp_registrar_club(
+    p_nombre         in varchar2,
+    p_direccion      in varchar2,
+    p_cp             in varchar2,
+    p_idioma         in varchar2,
+    p_id_ciudad      in number,
+    p_cuota          in char,
+    p_id_institucion in number
+) is
     v_count number;
-begin 
-    -- validar que el club exista
-    select count(*) into v_count from sojg_club
-        where (id_club = p_id_club);
-
-    if (v_count = 0) then 
-        raise_application_error(-20020, 'El club especificado no existe.');
+begin
+    select count(*) into v_count from sojg_ciudad where (id = p_id_ciudad);
+    if (v_count = 0) then
+        raise_application_error(-20001, 'La ciudad especificada no existe.');
     end if;
 
-    -- validar costo mayor a 0
-    if (p_costo <= 0) then 
-        raise_application_error(-20021, 'El costo de entrada debe ser mayor a cero.');
+    if (p_cuota not in ('SI', 'NO')) then
+        raise_application_error(-20002, 'El valor de cuota_membresia debe ser SI o NO.');
     end if;
 
-    -- validar que activa sea SI o NO
-    if (p_activa not in ('SI', 'NO')) then
-        raise_application_error(-20022, 'El valor de activa debe ser SI o NO.');
+    if (p_cuota = 'NO' and p_id_institucion is null) then
+        raise_application_error(-20003, 'Un club dependiente debe tener una institucion asociada.');
     end if;
 
-    -- insertar obra
-    insert into sojg_obra (titulo_de_obra, activa, descripcion_de_la_obra, costo_entrada, id_club)
-        values (p_titulo, p_activa, p_descripcion, p_costo, p_id_club);
+    if (p_id_institucion is not null) then
+        select count(*) into v_count from sojg_institucion where (id = p_id_institucion);
+        if (v_count = 0) then
+            raise_application_error(-20004, 'La institucion especificada no existe.');
+        end if;
+    end if;
+
+    insert into sojg_club (nombre, direccion, codigo_postal, idioma_del_club, id_ciudad, cuota_membresia, id_institucion)
+        values (p_nombre, p_direccion, p_cp, p_idioma, p_id_ciudad, p_cuota, p_id_institucion);
+    commit;
+exception
+    when others then rollback; raise;
+end sojg_sp_registrar_club;
+/
+
+-- SP2: Asociar clubes
+create or replace procedure sojg_sp_asociar_clubes(
+    p_id_club_1 in number,
+    p_id_club_2 in number,
+    p_fecha     in date
+) is
+    v_idioma_1 sojg_club.idioma_del_club%type;
+    v_idioma_2 sojg_club.idioma_del_club%type;
+    v_club_1   number;
+    v_club_2   number;
+    v_count    number;
+begin
+    v_club_1 := least(p_id_club_1, p_id_club_2);
+    v_club_2 := greatest(p_id_club_1, p_id_club_2);
+
+    if (v_club_1 = v_club_2) then
+        raise_application_error(-20010, 'Un club no puede asociarse consigo mismo.');
+    end if;
+
+    select idioma_del_club into v_idioma_1 from sojg_club where (id_club = v_club_1);
+    select idioma_del_club into v_idioma_2 from sojg_club where (id_club = v_club_2);
+
+    if (v_idioma_1 != v_idioma_2) then
+        raise_application_error(-20011, 'Los clubes no comparten idioma. No se puede crear la asociacion.');
+    end if;
+
+    select count(*) into v_count from sojg_asociacion
+        where (id_club_1 = v_club_1 and id_club_2 = v_club_2);
+    if (v_count > 0) then
+        raise_application_error(-20012, 'Esta asociacion ya existe.');
+    end if;
+
+    insert into sojg_asociacion (id_club_1, id_club_2, fecha_asociacion)
+        values (v_club_1, v_club_2, p_fecha);
+    commit;
+exception
+    when no_data_found then raise_application_error(-20013, 'Uno o ambos clubes no existen.');
+    when others then rollback; raise;
+end sojg_sp_asociar_clubes;
+/
+
+-- SP3: Expulsar miembro
+-- subrutina de sojg_sp_registrar_inasistencia cuando supera 30% de faltas
+create or replace procedure sojg_sp_expulsar_miembro(
+    p_id_miembro in number,
+    p_id_club    in number,
+    p_motivo     in varchar2
+) is
+    v_count number;
+begin
+    if (p_motivo not in ('Voluntario', 'Inasistencia', 'Deudas', 'Otro')) then
+        raise_application_error(-20020, 'Motivo invalido. Debe ser: Voluntario, Inasistencia, Deudas u Otro.');
+    end if;
+
+    select count(*) into v_count from sojg_historico_membresia
+        where (id_miembro = p_id_miembro) and (id_club = p_id_club) and (estatus = 'Activa');
+    if (v_count = 0) then
+        raise_application_error(-20021, 'El miembro no se encuentra activo en este club.');
+    end if;
+
+    update sojg_historico_membresia
+        set fecha_fin = sysdate, estatus = 'Expulsada', motivo_retiro = p_motivo
+        where (id_miembro = p_id_miembro) and (id_club = p_id_club) and (estatus = 'Activa');
+
+    update sojg_historico_grupo_lectura
+        set fecha_fin = sysdate
+        where (id_miembro = p_id_miembro) and (id_club = p_id_club) and (fecha_fin is null);
 
     commit;
+exception
+    when others then rollback; raise;
+end sojg_sp_expulsar_miembro;
+/
 
-exception 
-    when others then
-        rollback;
-        raise;
+-- SP4: Split de grupo
+-- subrutina de sojg_sp_asignar_grupo cuando se supera la capacidad maxima
+create or replace procedure sojg_sp_split_grupo(
+    p_id_club           in number,
+    p_numero_grupo_orig in number
+) is
+    v_nuevo_grupo number;
+    v_total       number;
+    v_mitad       number;
+    v_contador    number := 0;
+    v_categoria   varchar2(10);
+    v_dia         varchar2(15);
+    v_hora        number(4,2);
+    v_activas     number;
+
+    cursor c_miembros is
+        select id_miembro, fecha_inicio_membresia, fecha_inicio
+        from sojg_historico_grupo_lectura
+        where (id_club = p_id_club)
+            and (numero_de_grupo = p_numero_grupo_orig)
+            and (fecha_fin is null)
+        order by fecha_inicio asc;
+begin
+    -- validar que no haya reunion activa
+    select count(*) into v_activas from sojg_calendario_mes
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo_orig)
+            and (realizada = 'NO') and (ultima_discusion = 'NO');
+    if (v_activas > 0) then
+        raise_application_error(-20070, 'No se puede hacer split mientras el grupo tiene una reunion activa.');
+    end if;
+
+    select categoria_edad, dia_reunion, hora_inicio into v_categoria, v_dia, v_hora
+        from sojg_grupo_de_lectura
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo_orig);
+
+    select count(*) into v_total from sojg_historico_grupo_lectura
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo_orig) and (fecha_fin is null);
+
+    if (v_total < 2) then
+        raise_application_error(-20071, 'El grupo no tiene suficientes miembros para hacer split.');
+    end if;
+
+    v_mitad := trunc(v_total / 2);
+
+    select nvl(max(numero_de_grupo), 0) + 1 into v_nuevo_grupo
+        from sojg_grupo_de_lectura where (id_club = p_id_club);
+
+    insert into sojg_grupo_de_lectura (id_club, numero_de_grupo, fecha_de_creacion, categoria_edad, dia_reunion, hora_inicio)
+        values (p_id_club, v_nuevo_grupo, sysdate, v_categoria, v_dia, v_hora);
+
+    for r in c_miembros loop
+        v_contador := v_contador + 1;
+        if (v_contador > (v_total - v_mitad)) then
+            update sojg_historico_grupo_lectura
+                set fecha_fin = sysdate
+                where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo_orig)
+                    and (id_miembro = r.id_miembro) and (fecha_inicio = r.fecha_inicio);
+
+            insert into sojg_historico_grupo_lectura (id_club, numero_de_grupo, fecha_inicio_membresia, id_miembro, fecha_inicio, fecha_fin)
+                values (p_id_club, v_nuevo_grupo, r.fecha_inicio_membresia, r.id_miembro, sysdate, null);
+        end if;
+    end loop;
+
+    commit;
+exception
+    when no_data_found then raise_application_error(-20072, 'El grupo especificado no existe.');
+    when others then rollback; raise;
+end sojg_sp_split_grupo;
+/
+
+-- SP5: Asignar grupo
+-- subrutina de sojg_sp_inscribir_miembro
+create or replace procedure sojg_sp_asignar_grupo(
+    p_id_miembro in number,
+    p_id_club    in number,
+    p_fecha_mem  in date
+) is
+    v_edad      number;
+    v_categoria varchar2(10);
+    v_grupo     number;
+    v_count     number;
+begin
+    v_edad := sojg_edad_miembro(p_id_miembro);
+
+    if (v_edad > 25) then v_categoria := 'Adulto';
+    elsif (v_edad >= 13) then v_categoria := 'Joven';
+    else v_categoria := 'Nino';
+    end if;
+
+    select numero_de_grupo into v_grupo
+    from sojg_grupo_de_lectura gl
+    where (gl.id_club = p_id_club) and (gl.categoria_edad = v_categoria)
+        and not exists (
+            select 1 from sojg_calendario_mes cm
+            where (cm.id_club = gl.id_club) and (cm.numero_de_grupo = gl.numero_de_grupo)
+                and (cm.realizada = 'NO') and (cm.ultima_discusion = 'NO')
+        )
+    order by (
+        select count(*) from sojg_historico_grupo_lectura hg
+        where (hg.id_club = gl.id_club) and (hg.numero_de_grupo = gl.numero_de_grupo)
+            and (hg.fecha_fin is null)
+    ) asc
+    fetch first 1 rows only;
+
+    insert into sojg_historico_grupo_lectura (id_club, numero_de_grupo, fecha_inicio_membresia, id_miembro, fecha_inicio, fecha_fin)
+        values (p_id_club, v_grupo, p_fecha_mem, p_id_miembro, p_fecha_mem, null);
+
+    select count(*) into v_count from sojg_historico_grupo_lectura
+        where (id_club = p_id_club) and (numero_de_grupo = v_grupo) and (fecha_fin is null);
+
+    if (v_count >= 4) then
+        sojg_sp_split_grupo(p_id_club, v_grupo);
+    end if;
+exception
+    when no_data_found then
+        raise_application_error(-20030, 'No hay grupos disponibles de la categoria correcta o todos tienen reunion activa.');
+    when others then raise;
+end sojg_sp_asignar_grupo;
+/
+
+-- SP6: Inscribir miembro
+-- usa sojg_sp_asignar_grupo como subrutina
+create or replace procedure sojg_sp_inscribir_miembro(
+    p_id_miembro in number,
+    p_id_club    in number,
+    p_fecha      in date
+) is
+    v_count number;
+    v_cuota char(2);
+begin
+    select count(*) into v_count from sojg_historico_membresia
+        where (id_miembro = p_id_miembro) and (estatus = 'Activa');
+    if (v_count > 0) then
+        raise_application_error(-20040, 'El miembro ya se encuentra activo en un club.');
+    end if;
+
+    select count(*) into v_count from sojg_historico_membresia
+        where (id_miembro = p_id_miembro) and (estatus = 'Morosa');
+    if (v_count > 0) then
+        raise_application_error(-20041, 'El miembro tiene deudas pendientes. No puede inscribirse.');
+    end if;
+
+    select count(*) into v_count from sojg_club where (id_club = p_id_club);
+    if (v_count = 0) then
+        raise_application_error(-20042, 'El club especificado no existe.');
+    end if;
+
+    insert into sojg_historico_membresia (id_miembro, id_club, fecha_inicio_membresia, fecha_fin, estatus, motivo_retiro)
+        values (p_id_miembro, p_id_club, p_fecha, null, 'Activa', null);
+
+    -- asignar grupo automaticamente
+    sojg_sp_asignar_grupo(p_id_miembro, p_id_club, p_fecha);
+
+    -- registrar pago si el club cobra cuota
+    select cuota_membresia into v_cuota from sojg_club where (id_club = p_id_club);
+    if (v_cuota = 'SI') then
+        insert into sojg_pago_membresia (fecha, monto, id_miembro, id_club)
+            values (p_fecha, 100.00, p_id_miembro, p_id_club);
+    end if;
+
+    commit;
+exception
+    when others then rollback; raise;
+end sojg_sp_inscribir_miembro;
+/
+
+-- SP7: Retirar miembro
+create or replace procedure sojg_sp_retirar_miembro(
+    p_id_miembro in number,
+    p_id_club    in number,
+    p_fecha      in date,
+    p_motivo     in varchar2
+) is
+    v_cuota         char(2);
+    v_dias_aviso    number;
+    v_estatus_final varchar2(20);
+begin
+    if (p_motivo not in ('Voluntario', 'Inasistencia', 'Deudas', 'Otro')) then
+        raise_application_error(-20050, 'Motivo invalido.');
+    end if;
+
+    select cuota_membresia into v_cuota from sojg_club where (id_club = p_id_club);
+
+    v_dias_aviso := trunc(p_fecha) - trunc(sysdate);
+    if (v_cuota = 'SI' and v_dias_aviso < 30) then
+        v_estatus_final := 'Morosa';
+    else
+        v_estatus_final := 'Retirada';
+    end if;
+
+    update sojg_historico_membresia
+        set fecha_fin = p_fecha, estatus = v_estatus_final, motivo_retiro = p_motivo
+        where (id_miembro = p_id_miembro) and (id_club = p_id_club) and (estatus = 'Activa');
+
+    if (sql%notfound) then
+        raise_application_error(-20051, 'El miembro no se encuentra activo en este club.');
+    end if;
+
+    update sojg_historico_grupo_lectura
+        set fecha_fin = p_fecha
+        where (id_miembro = p_id_miembro) and (id_club = p_id_club) and (fecha_fin is null);
+
+    commit;
+exception
+    when no_data_found then raise_application_error(-20052, 'El club especificado no existe.');
+    when others then rollback; raise;
+end sojg_sp_retirar_miembro;
+/
+
+-- SP8: Registrar pago
+create or replace procedure sojg_sp_registrar_pago(
+    p_id_miembro in number,
+    p_id_club    in number,
+    p_monto      in number,
+    p_fecha      in date
+) is
+    v_cuota char(2);
+begin
+    select cuota_membresia into v_cuota from sojg_club where (id_club = p_id_club);
+
+    if (v_cuota = 'NO') then
+        raise_application_error(-20060, 'Este club es dependiente y no cobra cuotas.');
+    end if;
+
+    if (p_monto <= 0) then
+        raise_application_error(-20061, 'El monto debe ser mayor a cero.');
+    end if;
+
+    insert into sojg_pago_membresia (fecha, monto, id_miembro, id_club)
+        values (p_fecha, p_monto, p_id_miembro, p_id_club);
+
+    update sojg_historico_membresia
+        set estatus = 'Activa'
+        where (id_miembro = p_id_miembro) and (id_club = p_id_club)
+            and (estatus = 'Morosa') and (fecha_fin is null);
+
+    update sojg_historico_membresia
+        set estatus = 'Retirada'
+        where (id_miembro = p_id_miembro) and (id_club = p_id_club)
+            and (estatus = 'Morosa') and (fecha_fin is not null);
+
+    commit;
+exception
+    when no_data_found then raise_application_error(-20062, 'El club especificado no existe.');
+    when others then rollback; raise;
+end sojg_sp_registrar_pago;
+/
+
+-- ==========================================
+-- ADMINISTRACION DE REUNIONES
+-- ==========================================
+
+-- SP9: Generar calendario
+create or replace procedure sojg_sp_generar_calendario(
+    p_id_club      in number,
+    p_numero_grupo in number,
+    p_isbn_libro   in number,
+    p_id_moderador in number,
+    p_mes          in number,
+    p_anno         in number
+) is
+    v_fecha_inicio date;
+    v_fecha_fin    date;
+    v_fecha_actual date;
+    v_reuniones    number := 0;
+    v_categoria    varchar2(10);
+    v_count        number;
+begin
+    select categoria_edad into v_categoria
+        from sojg_grupo_de_lectura
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo);
+
+    select count(*) into v_count from sojg_calendario_mes
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+            and (realizada = 'NO') and (ultima_discusion = 'NO');
+    if (v_count > 0) then
+        raise_application_error(-20080, 'El grupo tiene una discusion activa. No se puede generar nuevo calendario.');
+    end if;
+
+    select count(*) into v_count from sojg_libro where (isbn = p_isbn_libro);
+    if (v_count = 0) then
+        raise_application_error(-20081, 'El libro especificado no existe.');
+    end if;
+
+    v_fecha_inicio := to_date('01/' || to_char(p_mes, 'FM00') || '/' || to_char(p_anno), 'DD/MM/YYYY');
+    v_fecha_fin    := last_day(v_fecha_inicio);
+    v_fecha_actual := v_fecha_inicio;
+
+    while (v_fecha_actual <= v_fecha_fin and v_reuniones < 3) loop
+        if (to_char(v_fecha_actual, 'D') not in ('1', '7')) then
+            v_reuniones := v_reuniones + 1;
+            insert into sojg_calendario_mes (id_club, numero_de_grupo, isbn_libro, fecha_reunion, realizada, ultima_discusion, id_moderador)
+                values (p_id_club, p_numero_grupo, p_isbn_libro, v_fecha_actual, 'NO',
+                    case when v_reuniones = 3 then 'SI' else 'NO' end, p_id_moderador);
+        end if;
+        v_fecha_actual := v_fecha_actual + 1;
+    end loop;
+
+    if (v_reuniones < 3) then
+        raise_application_error(-20082, 'El mes no tiene suficientes dias habiles para 3 reuniones.');
+    end if;
+
+    commit;
+exception
+    when no_data_found then raise_application_error(-20083, 'El club o grupo especificado no existe.');
+    when others then rollback; raise;
+end sojg_sp_generar_calendario;
+/
+
+-- SP10: Asignar moderador
+create or replace procedure sojg_sp_asignar_moderador(
+    p_id_club      in number,
+    p_numero_grupo in number,
+    p_isbn_libro   in number,
+    p_id_moderador in number
+) is
+    v_categoria varchar2(10);
+    v_ocupado   number;
+    v_es_adulto number;
+    v_pertenece number;
+begin
+    select categoria_edad into v_categoria
+        from sojg_grupo_de_lectura
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo);
+
+    select count(*) into v_ocupado from sojg_calendario_mes
+        where (id_moderador = p_id_moderador) and (realizada = 'NO')
+            and (id_club != p_id_club or numero_de_grupo != p_numero_grupo);
+    if (v_ocupado > 0) then
+        raise_application_error(-20090, 'El moderador ya esta asignado en otro grupo con discusion activa.');
+    end if;
+
+    if (v_categoria = 'Nino') then
+        select count(*) into v_es_adulto
+            from sojg_historico_grupo_lectura hgl
+            join sojg_grupo_de_lectura gl
+                on (hgl.id_club = gl.id_club) and (hgl.numero_de_grupo = gl.numero_de_grupo)
+            where (hgl.id_miembro = p_id_moderador) and (hgl.id_club = p_id_club)
+                and (gl.categoria_edad = 'Adulto') and (hgl.fecha_fin is null);
+        if (v_es_adulto = 0) then
+            raise_application_error(-20091, 'El moderador de un grupo Nino debe ser un miembro Adulto del mismo club.');
+        end if;
+    else
+        select count(*) into v_pertenece from sojg_historico_grupo_lectura
+            where (id_miembro = p_id_moderador) and (id_club = p_id_club)
+                and (numero_de_grupo = p_numero_grupo) and (fecha_fin is null);
+        if (v_pertenece = 0) then
+            raise_application_error(-20092, 'El moderador debe ser un miembro activo de este grupo.');
+        end if;
+    end if;
+
+    update sojg_calendario_mes set id_moderador = p_id_moderador
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo) and (isbn_libro = p_isbn_libro);
+
+    if (sql%rowcount = 0) then
+        raise_application_error(-20093, 'No se encontraron reuniones programadas para este libro en el grupo.');
+    end if;
+
+    commit;
+exception
+    when no_data_found then raise_application_error(-20094, 'El club o grupo especificado no existe.');
+    when others then rollback; raise;
+end sojg_sp_asignar_moderador;
+/
+
+-- SP11: Realizar reunion
+-- marca una reunion como realizada
+create or replace procedure sojg_sp_realizar_reunion(
+    p_id_club      in number,
+    p_numero_grupo in number,
+    p_isbn_libro   in number,
+    p_fecha        in date
+) is
+    v_count number;
+begin
+    select count(*) into v_count from sojg_calendario_mes
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+            and (isbn_libro = p_isbn_libro) and (fecha_reunion = p_fecha);
+    if (v_count = 0) then
+        raise_application_error(-20095, 'La reunion especificada no existe en el calendario.');
+    end if;
+
+    update sojg_calendario_mes set realizada = 'SI'
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+            and (isbn_libro = p_isbn_libro) and (fecha_reunion = p_fecha);
+
+    commit;
+exception
+    when others then rollback; raise;
+end sojg_sp_realizar_reunion;
+/
+
+-- SP12: Registrar inasistencia
+-- si el miembro supera 30% de faltas en el bimestre lo expulsa automaticamente
+create or replace procedure sojg_sp_registrar_inasistencia(
+    p_id_club      in number,
+    p_numero_grupo in number,
+    p_isbn_libro   in number,
+    p_fecha        in date,
+    p_id_miembro   in number
+) is
+    v_realizada  varchar2(2);
+    v_count      number;
+    v_bimestre   number;
+    v_pct_faltas number;
+begin
+    -- validar que la reunion existe y fue realizada
+    select realizada into v_realizada from sojg_calendario_mes
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+            and (isbn_libro = p_isbn_libro) and (fecha_reunion = p_fecha);
+
+    if (v_realizada = 'NO') then
+        raise_application_error(-20100, 'No se puede registrar inasistencia en una reunion que no fue realizada.');
+    end if;
+
+    -- validar que el miembro pertenecia al grupo en esa fecha
+    select count(*) into v_count from sojg_historico_grupo_lectura
+        where (id_miembro = p_id_miembro) and (id_club = p_id_club)
+            and (numero_de_grupo = p_numero_grupo)
+            and (fecha_inicio <= p_fecha)
+            and (fecha_fin is null or fecha_fin >= p_fecha);
+    if (v_count = 0) then
+        raise_application_error(-20101, 'El miembro no estaba activo en este grupo en la fecha de la reunion.');
+    end if;
+
+    -- validar que no este ya registrada
+    select count(*) into v_count from sojg_inasistencia
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+            and (isbn_libro = p_isbn_libro) and (fecha_reunion = p_fecha)
+            and (id_miembro = p_id_miembro);
+    if (v_count > 0) then
+        raise_application_error(-20102, 'La inasistencia ya estaba registrada.');
+    end if;
+
+    insert into sojg_inasistencia (id_club, numero_de_grupo, isbn_libro, fecha_reunion, id_miembro)
+        values (p_id_club, p_numero_grupo, p_isbn_libro, p_fecha, p_id_miembro);
+
+    -- verificar si supera 30% de faltas en el bimestre y expulsar automaticamente
+    v_bimestre   := ceil(extract(month from p_fecha) / 2);
+    v_pct_faltas := 100 - sojg_pct_participacion_bimestre_miembro(
+        p_id_miembro, v_bimestre, extract(year from p_fecha)
+    );
+
+    if (v_pct_faltas > 30) then
+        sojg_sp_expulsar_miembro(p_id_miembro, p_id_club, 'Inasistencia');
+    end if;
+
+    commit;
+exception
+    when no_data_found then raise_application_error(-20103, 'La reunion especificada no existe en el calendario.');
+    when others then rollback; raise;
+end sojg_sp_registrar_inasistencia;
+/
+
+-- SP13: Cerrar discusion
+create or replace procedure sojg_sp_cerrar_discusion(
+    p_id_club      in number,
+    p_numero_grupo in number,
+    p_isbn_libro   in number,
+    p_conclusiones in varchar2,
+    p_valoracion   in number
+) is
+    v_count number;
+begin
+    if (p_valoracion < 1 or p_valoracion > 5) then
+        raise_application_error(-20110, 'La valoracion debe estar entre 1 y 5.');
+    end if;
+
+    -- validar que exista la reunion final marcada como ultima discusion
+    select count(*) into v_count from sojg_calendario_mes
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+            and (isbn_libro = p_isbn_libro) and (ultima_discusion = 'SI');
+    if (v_count = 0) then
+        raise_application_error(-20111, 'No se encontro la reunion final para este libro en el grupo.');
+    end if;
+
+    -- validar que la reunion final haya sido realizada
+    select count(*) into v_count from sojg_calendario_mes
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+            and (isbn_libro = p_isbn_libro) and (ultima_discusion = 'SI') and (realizada = 'SI');
+    if (v_count = 0) then
+        raise_application_error(-20112, 'La reunion final aun no ha sido realizada. Use sp_realizar_reunion primero.');
+    end if;
+
+    update sojg_calendario_mes
+        set conclusiones = p_conclusiones, valoracion_final = p_valoracion
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+            and (isbn_libro = p_isbn_libro) and (ultima_discusion = 'SI');
+
+    commit;
+exception
+    when others then rollback; raise;
+end sojg_sp_cerrar_discusion;
+/
+
+-- ==========================================
+-- OBRAS Y PRESENTACIONES
+-- ==========================================
+
+-- SP14: Registrar obra
+create or replace procedure sojg_sp_registrar_obra(
+    p_titulo      in varchar2,
+    p_activa      in char,
+    p_descripcion in varchar2,
+    p_costo       in number,
+    p_id_club     in number
+) is
+    v_count number;
+begin
+    select count(*) into v_count from sojg_club where (id_club = p_id_club);
+    if (v_count = 0) then raise_application_error(-20120, 'El club especificado no existe.'); end if;
+
+    if (p_costo <= 0) then raise_application_error(-20121, 'El costo debe ser mayor a cero.'); end if;
+
+    if (p_activa not in ('SI', 'NO')) then raise_application_error(-20122, 'Activa debe ser SI o NO.'); end if;
+
+    insert into sojg_obra (titulo_de_obra, activa, descripcion_de_la_obra, costo_entrada, id_club)
+        values (p_titulo, p_activa, p_descripcion, p_costo, p_id_club);
+    commit;
+exception
+    when others then rollback; raise;
 end sojg_sp_registrar_obra;
 /
 
--- SP2: Registrar presentacion
-create or replace procedure sojg_sp_registrar_presentacion(
-    p_id_obra in number,
-    p_fecha in date,
-    p_valoracion in number,
-    p_cantidad_asistentes in number
-) is 
-    v_count number;
-begin 
-    -- validar que la obra existe y esta activa
-    select count(*) into v_count from sojg_obra
-        where (id_obra = p_id_obra) and (activa = 'SI');
-
-    if (v_count = 0) then 
-        raise_application_error(-20020, 'La obra no existe o no esta activa.');
-    end if;
-
-    -- validar que no exista ya una presentacion en esa fecha para esa obra 
-    select count(*) into v_count from sojg_presentacion_de_la_obra 
-        where (id_obra = p_id_obra) and (fecha = p_fecha);
-
-    if (v_count > 0) then
-        raise_application_error(-20021, 'Ya existe una presentacion de esta obra en esa fecha.');
-    end if;
-
-    insert into sojg_presentacion_de_la_obra (id_obra, fecha, valoracion, cantidad_asistentes) values (p_id_obra, p_fecha, p_valoracion, p_cantidad_asistentes);
-
-    commit;
-end sojg_sp_registrar_presentacion;
-/
-
--- SP3: Registrar mejor actor
-create or replace procedure sojg_sp_registrar_mejor_actor(
-    p_id_obra in number,
-    p_id_miembro in number,
-    p_fecha_presentacion in date,
-    p_votos in number
-) is 
-    v_count number;
-begin 
-
-    -- validar que la presentacion existe
-    select count(*) into v_count from sojg_presentacion_de_la_obra
-        where (id_obra = p_id_obra) and (fecha = p_fecha_presentacion);
-
-    if (v_count = 0) then
-        raise_application_error(-20030, 'No existe una presentacion de esta obra en esa fecha.');
-    end if;
-
-    -- validar que el miembro pertenece al elenco de la obra
-    select count(*) into v_count from sojg_elenco
-        where (id_obra = p_id_obra) and (id_miembro = p_id_miembro);
-
-    if (v_count = 0) then 
-        raise_application_error(-20031, 'El miembro no pertenece al elenco de esta obra.');
-    end if;
-
-    -- validar que los votos son positivos
-    if (p_votos <= 0) then
-        raise_application_error(-20032, 'Los votos deben ser mayores a cero.');
-    end if;
-
-    -- validar que no exista ya un registro de mejor actor para ese miembro en esa presentacion
-    select count(*) into v_count from sojg_mejor_actor 
-        where (id_obra = p_id_obra) and (id_miembro = p_id_miembro)
-            and (fecha_presentacion = p_fecha_presentacion);
-
-    if (v_count > 0) then
-        raise_application_error(-20033, 'Ya existe un registro de votos para este miembro en esta presentacion.');
-    end if;
-
-    insert into sojg_mejor_actor (id_obra, id_miembro, fecha_presentacion, votos) values (p_id_obra, p_id_miembro, p_fecha_presentacion, p_votos);
-    
-    commit;
-end sojg_sp_registrar_mejor_actor;
-/
-
--- SP4: Agregar un miembro al elenco
+-- SP15: Agregar miembro al elenco
+-- valida que el miembro sea del club de la obra o de un club asociado
 create or replace procedure sojg_sp_agregar_elenco(
-    p_id_obra in number,
+    p_id_obra    in number,
     p_id_miembro in number
 ) is
     v_id_club_obra number;
-    v_count number;
+    v_count        number;
 begin
-    -- obtener el club de la obra
-    select id_club into v_id_club_obra
-    from sojg_obra
-    where id_obra = p_id_obra;
+    select id_club into v_id_club_obra from sojg_obra where (id_obra = p_id_obra);
 
-    -- validar que el miembro pertenece al club de la obra o a un club asociado
-    select count(*) into v_count
-    from sojg_historico_membresia hm
-    where (hm.id_miembro = p_id_miembro)
-        and (hm.estatus = 'Activa')
-        and (
-            hm.id_club = v_id_club_obra
-            or exists (
-                select 1 from sojg_asociacion a
-                where (
-                    (a.id_club_1 = hm.id_club and a.id_club_2 = v_id_club_obra)
-                    or
-                    (a.id_club_1 = v_id_club_obra and a.id_club_2 = hm.id_club)
+    select count(*) into v_count from sojg_historico_membresia hm
+        where (hm.id_miembro = p_id_miembro) and (hm.estatus = 'Activa')
+            and (
+                hm.id_club = v_id_club_obra
+                or exists (
+                    select 1 from sojg_asociacion a
+                    where (
+                        (a.id_club_1 = hm.id_club and a.id_club_2 = v_id_club_obra)
+                        or (a.id_club_1 = v_id_club_obra and a.id_club_2 = hm.id_club)
+                    )
                 )
-            )
-        );
+            );
 
     if (v_count = 0) then
-        raise_application_error(-20040, 'El miembro no pertenece al club de la obra ni a un club asociado.');
+        raise_application_error(-20130, 'El miembro no pertenece al club de la obra ni a un club asociado.');
     end if;
 
-    insert into sojg_elenco (id_obra, id_miembro)
-        values (p_id_obra, p_id_miembro);
-
+    insert into sojg_elenco (id_obra, id_miembro) values (p_id_obra, p_id_miembro);
     commit;
+exception
+    when no_data_found then raise_application_error(-20131, 'La obra especificada no existe.');
+    when others then rollback; raise;
 end sojg_sp_agregar_elenco;
+/
+
+-- SP16: Registrar presentacion
+create or replace procedure sojg_sp_registrar_presentacion(
+    p_id_obra             in number,
+    p_fecha               in date,
+    p_valoracion          in number,
+    p_cantidad_asistentes in number
+) is
+    v_count number;
+begin
+    select count(*) into v_count from sojg_obra
+        where (id_obra = p_id_obra) and (activa = 'SI');
+    if (v_count = 0) then raise_application_error(-20140, 'La obra no existe o no esta activa.'); end if;
+
+    select count(*) into v_count from sojg_presentacion_de_la_obra
+        where (id_obra = p_id_obra) and (fecha = p_fecha);
+    if (v_count > 0) then raise_application_error(-20141, 'Ya existe una presentacion en esa fecha.'); end if;
+
+    if (p_cantidad_asistentes <= 0) then raise_application_error(-20142, 'Asistentes debe ser mayor a cero.'); end if;
+    if (p_valoracion < 1 or p_valoracion > 5) then raise_application_error(-20143, 'Valoracion debe estar entre 1 y 5.'); end if;
+
+    insert into sojg_presentacion_de_la_obra (id_obra, fecha, valoracion, cantidad_asistentes)
+        values (p_id_obra, p_fecha, p_valoracion, p_cantidad_asistentes);
+    commit;
+exception
+    when others then rollback; raise;
+end sojg_sp_registrar_presentacion;
+/
+
+-- SP17: Registrar mejor actor
+create or replace procedure sojg_sp_registrar_mejor_actor(
+    p_id_obra            in number,
+    p_id_miembro         in number,
+    p_fecha_presentacion in date,
+    p_votos              in number
+) is
+    v_count number;
+begin
+    select count(*) into v_count from sojg_presentacion_de_la_obra
+        where (id_obra = p_id_obra) and (fecha = p_fecha_presentacion);
+    if (v_count = 0) then raise_application_error(-20150, 'No existe presentacion en esa fecha.'); end if;
+
+    select count(*) into v_count from sojg_elenco
+        where (id_obra = p_id_obra) and (id_miembro = p_id_miembro);
+    if (v_count = 0) then raise_application_error(-20151, 'El miembro no pertenece al elenco.'); end if;
+
+    if (p_votos <= 0) then raise_application_error(-20152, 'Los votos deben ser mayores a cero.'); end if;
+
+    select count(*) into v_count from sojg_mejor_actor
+        where (id_obra = p_id_obra) and (id_miembro = p_id_miembro)
+            and (fecha_presentacion = p_fecha_presentacion);
+    if (v_count > 0) then raise_application_error(-20153, 'Ya existe registro de votos para este miembro en esta presentacion.'); end if;
+
+    insert into sojg_mejor_actor (id_obra, id_miembro, fecha_presentacion, votos)
+        values (p_id_obra, p_id_miembro, p_fecha_presentacion, p_votos);
+    commit;
+exception
+    when others then rollback; raise;
+end sojg_sp_registrar_mejor_actor;
 /
