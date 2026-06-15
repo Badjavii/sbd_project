@@ -2,23 +2,23 @@
 -- ARCHIVO: menu/reuniones_op1.sql
 -- ==========================================
 
+-- preview
 prompt ==========================================
-prompt   Grupos disponibles sin discusion activa:
+prompt   Grupos disponibles:
 prompt ==========================================
-select gl.id_club, gl.numero_de_grupo, gl.categoria_edad,
-       gl.dia_reunion, gl.hora_inicio
+col id_club       format 999
+col numero_de_grupo format 999
+col categoria_edad format a10
+col dia_reunion   format a12
+select gl.id_club, gl.numero_de_grupo, gl.categoria_edad, gl.dia_reunion
 from sojg_grupo_de_lectura gl
-where not exists (
-    select 1 from sojg_calendario_mes cm
-    where (cm.id_club = gl.id_club)
-        and (cm.numero_de_grupo = gl.numero_de_grupo)
-        and (cm.realizada = 'NO')
-)
 order by gl.id_club, gl.numero_de_grupo;
 prompt ==========================================
 prompt   Libros disponibles:
 prompt ==========================================
-select isbn, titulo, idioma from sojg_libro order by titulo;
+col isbn   format 999999
+col titulo format a40
+select isbn, titulo from sojg_libro order by titulo;
 prompt ==========================================
 prompt   Moderadores disponibles:
 prompt ==========================================
@@ -35,9 +35,9 @@ accept v_isbn      number prompt 'ISBN Libro: '
 accept v_id_mod    number prompt 'ID Moderador: '
 accept v_mes       number prompt 'Mes (1-12): '
 accept v_anno      number prompt 'Anno (YYYY): '
- 
+
 begin
-    sojg_sp_generar_calendario(
+    sojg_sp_generar_calendario_mensual(
         p_id_club      => &v_id_club,
         p_numero_grupo => &v_num_grupo,
         p_isbn_libro   => &v_isbn,
@@ -45,7 +45,6 @@ begin
         p_mes          => &v_mes,
         p_anno         => &v_anno
     );
-    dbms_output.put_line('Calendario generado exitosamente.');
 exception
     when others then dbms_output.put_line('Error: ' || sqlerrm);
 end;
