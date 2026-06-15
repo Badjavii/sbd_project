@@ -1,6 +1,22 @@
 -- ==========================================
 -- ARCHIVO: menu/clubes_op2.sql
 -- ==========================================
+
+-- preview
+prompt ==========================================
+prompt   Libros disponibles para preferencias:
+prompt ==========================================
+select isbn, titulo, tipo_narrativa, idioma
+from sojg_libro
+order by titulo;
+prompt ==========================================
+prompt   Clubes disponibles:
+prompt ==========================================
+select id_club, nombre, idioma_del_club, cuota_membresia
+from sojg_club
+order by id_club;
+prompt ==========================================
+
 accept v_nombre   char   prompt 'Nombre: '
 accept v_apellido char   prompt 'Apellido: '
 accept v_fecha    char   prompt 'Fecha nacimiento (DD/MM/YYYY): '
