@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 9.0.3.final using JasperReports Library version 6.21.6-ef58807af469abb082e2f734b1e78a3c47daad18  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="SOJG_Ficha_Libro_Estricta" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="bc2da84a-71a2-4aef-bbdf-b749be9d4a41">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="Oracle Adapter"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<parameter name="ISBN_PARAM" class="java.lang.String">
+		<parameterDescription><![CDATA[Ingrese el código ISBN del libro a consultar]]></parameterDescription>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT 
+    ISBN,
+    TITULO_LIBRO,
+    AUTORES,
+    ANNO_PUBLICACION,
+    Pais_Publicacion AS PAIS_PUBLICACION,
+    DECODE(Es_Primera_Edicion, 'SI', 'Primera Edición', 'Reedición') AS TEXTO_EDICION,
+    TIPO_NARRATIVA,
+    IDIOMA,
+    TEMA_RESUMEN,
+    SINOPSIS,
+    NVL(Continua_En_Serie, 'Obra Autónoma (No pertenece a una saga)') AS CONTINUA_EN_SERIE,
+    NVL(TO_CHAR(Valoracion_Promedio_Global), 'S/V') AS VALORACION_PROMEDIO_GLOBAL,
+    NVL(Club_Que_Analizo, 'Sin análisis registrado aún') AS CLUB_QUE_ANALIZO,
+    NVL(TO_CHAR(Grupo_Lector), '-') AS GRUPO_LECTOR,
+    NVL(Conclusiones_Del_Grupo, 'El grupo no registró conclusiones escritas en este periodo.') AS CONCLUSIONES_DEL_GRUPO
+FROM sojg_v_ficha_libro
+WHERE ISBN = $P{ISBN_PARAM}]]>
+	</queryString>
+	<field name="ISBN" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="ISBN"/>
+		<property name="com.jaspersoft.studio.field.label" value="ISBN"/>
+	</field>
+	<field name="TITULO_LIBRO" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="TITULO_LIBRO"/>
+		<property name="com.jaspersoft.studio.field.label" value="TITULO_LIBRO"/>
+	</field>
+	<field name="AUTORES" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="AUTORES"/>
+		<property name="com.jaspersoft.studio.field.label" value="AUTORES"/>
+	</field>
+	<field name="ANNO_PUBLICACION" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="ANNO_PUBLICACION"/>
+		<property name="com.jaspersoft.studio.field.label" value="ANNO_PUBLICACION"/>
+	</field>
+	<field name="PAIS_PUBLICACION" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="PAIS_PUBLICACION"/>
+		<property name="com.jaspersoft.studio.field.label" value="PAIS_PUBLICACION"/>
+	</field>
+	<field name="TEXTO_EDICION" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="TEXTO_EDICION"/>
+		<property name="com.jaspersoft.studio.field.label" value="TEXTO_EDICION"/>
+	</field>
+	<field name="TIPO_NARRATIVA" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="TIPO_NARRATIVA"/>
+		<property name="com.jaspersoft.studio.field.label" value="TIPO_NARRATIVA"/>
+	</field>
+	<field name="IDIOMA" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="IDIOMA"/>
+		<property name="com.jaspersoft.studio.field.label" value="IDIOMA"/>
+	</field>
+	<field name="TEMA_RESUMEN" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="TEMA_RESUMEN"/>
+		<property name="com.jaspersoft.studio.field.label" value="TEMA_RESUMEN"/>
+	</field>
+	<field name="SINOPSIS" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="SINOPSIS"/>
+		<property name="com.jaspersoft.studio.field.label" value="SINOPSIS"/>
+	</field>
+	<field name="CONTINUA_EN_SERIE" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="CONTINUA_EN_SERIE"/>
+		<property name="com.jaspersoft.studio.field.label" value="CONTINUA_EN_SERIE"/>
+	</field>
+	<field name="VALORACION_PROMEDIO_GLOBAL" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="VALORACION_PROMEDIO_GLOBAL"/>
+		<property name="com.jaspersoft.studio.field.label" value="VALORACION_PROMEDIO_GLOBAL"/>
+	</field>
+	<field name="CLUB_QUE_ANALIZO" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="CLUB_QUE_ANALIZO"/>
+		<property name="com.jaspersoft.studio.field.label" value="CLUB_QUE_ANALIZO"/>
+	</field>
+	<field name="GRUPO_LECTOR" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="GRUPO_LECTOR"/>
+		<property name="com.jaspersoft.studio.field.label" value="GRUPO_LECTOR"/>
+	</field>
+	<field name="CONCLUSIONES_DEL_GRUPO" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="CONCLUSIONES_DEL_GRUPO"/>
+		<property name="com.jaspersoft.studio.field.label" value="CONCLUSIONES_DEL_GRUPO"/>
+	</field>
+	<title>
+		<band height="50" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="5" width="380" height="20" forecolor="#1A659E" uuid="6fa217a4-31bf-4b95-a430-c081e748bde1"/>
+				<textElement>
+					<font fontName="Arial" size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SISTEMA DE CLUBES DE LECTURA · CATÁLOGO UCAB]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="32" width="555" height="1" forecolor="#FF6B35" uuid="7fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<graphicElement>
+					<pen lineWidth="2.0"/>
+				</graphicElement>
+			</line>
+			<textField pattern="dd/MM/yyyy">
+				<reportElement x="440" y="8" width="115" height="15" forecolor="#718096" uuid="8fa217a4-31bf-4b95-a430-c081e748bde3"/>
+				<textElement textAlignment="Right">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="199" splitType="Stretch">
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="0" width="555" height="65" backcolor="#1A659E" uuid="9fa217a4-31bf-4b95-a430-c081e748bde4"/>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<textField>
+				<reportElement x="15" y="10" width="395" height="25" forecolor="#FFFFFF" uuid="0fa217a4-31bf-4b95-a430-c081e748bde5"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="15" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TITULO_LIBRO}.toUpperCase()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="15" y="35" width="395" height="15" forecolor="#F7C59F" uuid="1fa217a4-31bf-4b95-a430-c081e748bde6"/>
+				<textElement>
+					<font fontName="Arial" size="10" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Por: " + $F{AUTORES}]]></textFieldExpression>
+			</textField>
+			<rectangle radius="4">
+				<reportElement mode="Opaque" x="460" y="10" width="80" height="45" backcolor="#FF6B35" uuid="2fa217a4-31bf-4b95-a430-c081e748bde7"/>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="460" y="13" width="80" height="11" forecolor="#FFFFFF" uuid="3fa217a4-31bf-4b95-a430-c081e748bde8"/>
+				<textElement textAlignment="Center">
+					<font fontName="Arial" size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[RATING GLOBAL]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="460" y="22" width="80" height="25" forecolor="#FFFFFF" uuid="4fa217a4-31bf-4b95-a430-c081e748bde9"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="16" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{VALORACION_PROMEDIO_GLOBAL}]]></textFieldExpression>
+			</textField>
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="75" width="555" height="110" backcolor="#FFFDFB" uuid="5fa217a4-31bf-4b95-a430-c081e748bda1"/>
+				<graphicElement>
+					<pen lineWidth="1.0" lineColor="#F7C59F"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="15" y="82" width="90" height="15" forecolor="#1A659E" uuid="6fa217a4-31bf-4b95-a430-c081e748bda2"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Código ISBN:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="110" y="82" width="160" height="15" forecolor="#2D3748" uuid="7fa217a4-31bf-4b95-a430-c081e748bda3"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ISBN}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="15" y="102" width="90" height="15" forecolor="#1A659E" uuid="8fa217a4-31bf-4b95-a430-c081e748bda4"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Año / Edición:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="110" y="102" width="160" height="15" forecolor="#2D3748" uuid="9fa217a4-31bf-4b95-a430-c081e748bda5"/>
+				<textElement>
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ANNO_PUBLICACION} + " (" + $F{TEXTO_EDICION} + ")"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="15" y="122" width="90" height="15" forecolor="#1A659E" uuid="0fa217a4-31bf-4b95-a430-c081e748bda6"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Narrativa / Idioma:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="110" y="122" width="160" height="15" forecolor="#2D3748" uuid="1fa217a4-31bf-4b95-a430-c081e748bda7"/>
+				<textElement>
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TIPO_NARRATIVA} + " / " + $F{IDIOMA}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="15" y="142" width="90" height="15" forecolor="#1A659E" uuid="2fa217a4-31bf-4b95-a430-c081e748bda8"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Continuidad Saga:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="110" y="142" width="160" height="15" forecolor="#E53E3E" uuid="3fa217a4-31bf-4b95-a430-c081e748bda9"/>
+				<textElement>
+					<font fontName="Arial" size="9" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CONTINUA_EN_SERIE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="285" y="82" width="75" height="15" forecolor="#1A659E" uuid="4fa217a4-31bf-4b95-a430-c081e748bdb1"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Sinopsis:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="365" y="82" width="175" height="55" forecolor="#4A5568" uuid="5fa217a4-31bf-4b95-a430-c081e748bdb2"/>
+				<textElement textAlignment="Justified" markup="styled">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{SINOPSIS}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="15" y="160" width="90" height="15" forecolor="#1A659E" uuid="af8fbbba-1365-4165-a60a-f849f3eac733"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[País de Publicacion:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="110" y="160" width="160" height="15" uuid="ef87392d-8fa7-4258-aacb-13dee9046936"/>
+				<textFieldExpression><![CDATA[$F{PAIS_PUBLICACION}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="285" y="142" width="75" height="15" forecolor="#1A659E" uuid="4acd5ce5-9f3a-43bd-9625-362f9f315339"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tema Resumen:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="365" y="142" width="175" height="43" forecolor="#4A5568" uuid="9acf1873-0fc1-40e5-9687-2eccaaa9251d"/>
+				<textElement textAlignment="Justified" markup="styled">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TEMA_RESUMEN}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="25" splitType="Stretch">
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="3" width="555" height="20" backcolor="#FF6B35" uuid="6fa217a4-31bf-4b95-a430-c081e748bdb3"/>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="15" y="6" width="145" height="14" forecolor="#FFFFFF" uuid="7fa217a4-31bf-4b95-a430-c081e748bdb4"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CLUB RESPONSABLE]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="165" y="6" width="45" height="14" forecolor="#FFFFFF" uuid="8fa217a4-31bf-4b95-a430-c081e748bdb5"/>
+				<textElement textAlignment="Center">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[GRUPO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="220" y="6" width="320" height="14" forecolor="#FFFFFF" uuid="9fa217a4-31bf-4b95-a430-c081e748bdb6"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CONCLUSIONES TÉCNICAS DEL DEBATE]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="38" splitType="Stretch">
+			<line>
+				<reportElement x="0" y="35" width="555" height="1" forecolor="#F7C59F" uuid="0fa217a4-31bf-4b95-a430-c081e748bdb7"/>
+				<graphicElement>
+					<pen lineWidth="1.0"/>
+				</graphicElement>
+			</line>
+			<textField>
+				<reportElement x="15" y="6" width="145" height="24" uuid="1fa217a4-31bf-4b95-a430-c081e748bdb8"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CLUB_QUE_ANALIZO}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="165" y="6" width="45" height="15" uuid="2fa217a4-31bf-4b95-a430-c081e748bdb9"/>
+				<textElement textAlignment="Center">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{GRUPO_LECTOR}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="220" y="6" width="320" height="24" forecolor="#2D3748" uuid="3fa217a4-31bf-4b95-a430-c081e748bdc1"/>
+				<textElement textAlignment="Justified">
+					<font fontName="Arial" size="8" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CONCLUSIONES_DEL_GRUPO}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="25" splitType="Stretch">
+			<textField>
+				<reportElement x="435" y="5" width="80" height="15" forecolor="#718096" uuid="4fa217a4-31bf-4b95-a430-c081e748bdc2"/>
+				<textElement textAlignment="Right">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Página "+$V{PAGE_NUMBER}+" de"]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement x="515" y="5" width="40" height="15" forecolor="#718096" uuid="5fa217a4-31bf-4b95-a430-c081e748bdc3"/>
+				<textElement>
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+</jasperReport>
