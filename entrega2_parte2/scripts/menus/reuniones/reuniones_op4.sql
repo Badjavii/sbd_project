@@ -1,6 +1,28 @@
 -- ==========================================
 -- ARCHIVO: menu/reuniones_op4.sql
 -- ==========================================
+
+prompt ==========================================
+prompt   Reuniones realizadas:
+prompt ==========================================
+select cm.id_club, cm.numero_de_grupo, cm.isbn_libro,
+       to_char(cm.fecha_reunion, 'DD/MM/YYYY') as fecha,
+       l.titulo as libro
+from sojg_calendario_mes cm
+join sojg_libro l on (cm.isbn_libro = l.isbn)
+where (cm.realizada = 'SI')
+order by cm.fecha_reunion desc;
+prompt ==========================================
+prompt   Miembros activos por grupo:
+prompt ==========================================
+select hg.id_club, hg.numero_de_grupo,
+       l.id_miembro, l.nombre || ' ' || l.apellido as nombre
+from sojg_historico_grupo_lectura hg
+join sojg_lector l on (hg.id_miembro = l.id_miembro)
+where (hg.fecha_fin is null)
+order by hg.id_club, hg.numero_de_grupo, l.id_miembro;
+prompt ==========================================
+
 accept v_id_club    number prompt 'ID Club: '
 accept v_num_grupo  number prompt 'Numero de grupo: '
 accept v_isbn       number prompt 'ISBN Libro: '
