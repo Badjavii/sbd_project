@@ -1,6 +1,22 @@
 -- ==========================================
 -- ARCHIVO: menu/clubes_op3.sql
 -- ==========================================
+
+-- preview
+prompt ==========================================
+prompt   Miembros activos:
+prompt ==========================================
+select l.id_miembro, l.nombre || ' ' || l.apellido as nombre, hm.id_club, hm.estatus
+from sojg_lector l
+join sojg_historico_membresia hm on (l.id_miembro = hm.id_miembro)
+where (hm.estatus = 'Activa')
+order by l.id_miembro;
+prompt ==========================================
+prompt   Clubes disponibles:
+prompt ==========================================
+select id_club, nombre, idioma_del_club from sojg_club order by id_club;
+prompt ==========================================
+
 accept v_id_miembro  number prompt 'ID Miembro: '
 accept v_club_actual number prompt 'ID Club actual: '
 accept v_fecha_ret   char   prompt 'Fecha retiro (DD/MM/YYYY): '
