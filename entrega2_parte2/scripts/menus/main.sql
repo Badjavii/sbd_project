@@ -1,13 +1,34 @@
 -- ==========================================
 -- ARCHIVO: menu/main.sql
 -- ==========================================
-define base_path = 'C:\ruta_repositorio\entrega2_parte2\scripts\menus'
+define base_path = '/home/badjavii/Repositories/sbd_project/entrega2_parte2/scripts/menus'
 
 set serveroutput on
 set verify off
 set feedback off
 set echo off
- 
+set linesize 200
+set pagesize 50
+set colsep ' | '
+
+-- formatos de columnas globales
+col id_miembro    format 999
+col id_club       format 999
+col id_obra       format 999
+col isbn          format 999999
+col isbn_libro    format 999999
+col numero_de_grupo format 999
+col nombre        format a30
+col titulo        format a40
+col ciudad        format a20
+col pais          format a20
+col idioma        format a15
+col categoria     format a10
+col estatus       format a10
+col fecha         format a12
+col club          format a30 
+
+
 clear screen
 prompt ==========================================
 prompt       SISTEMA DE CLUBES DE LECTURA
