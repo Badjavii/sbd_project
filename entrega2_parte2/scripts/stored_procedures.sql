@@ -369,6 +369,46 @@ exception
 end sojg_sp_registrar_pago;
 /
 
+-- SP: Actualizar estado moroso
+-- compara antiguedad vs cantidad de pagos
+-- subrutina de clubes_op9.sql
+create or replace procedure sojg_sp_actualizar_morosos(
+    p_id_club in number
+) is
+    v_cuota char(2);
+begin
+    -- solo aplica a clubes independientes
+    select cuota_membresia into v_cuota
+    from sojg_club where (id_club = p_id_club);
+
+    if (v_cuota = 'NO') then
+        raise_application_error(-20095, 'Este club es dependiente y no cobra cuotas.');
+    end if;
+
+    -- marcar como morosos a quienes deben pagos
+    -- antiguedad en años > cantidad de pagos registrados = debe
+    update sojg_historico_membresia hm
+    set estatus = 'Morosa'
+    where (hm.id_club = p_id_club)
+        and (hm.estatus = 'Activa')
+        and (hm.fecha_fin is null)
+        and (
+            trunc(months_between(sysdate, hm.fecha_inicio_membresia) / 12)
+            >
+            (select count(*) from sojg_pago_membresia pm
+             where (pm.id_miembro = hm.id_miembro)
+                 and (pm.id_club = p_id_club))
+        );
+
+    dbms_output.put_line('Estado de morosos actualizado. Filas afectadas: ' || sql%rowcount);
+    commit;
+exception
+    when no_data_found then
+        raise_application_error(-20096, 'El club especificado no existe.');
+    when others then rollback; raise;
+end sojg_sp_actualizar_morosos;
+/
+
 -- ==========================================
 -- ADMINISTRACION DE REUNIONES
 -- ==========================================
