@@ -1,6 +1,17 @@
 -- ==========================================
 -- ARCHIVO: menu/clubes_op1.sql
 -- ==========================================
+
+-- preview
+prompt ==========================================
+prompt   Ciudades disponibles:
+prompt ==========================================
+select c.id, c.nombre as ciudad, p.nombre as pais
+from sojg_ciudad c
+join sojg_pais p on (c.id_pais = p.id)
+order by p.nombre, c.nombre;
+prompt ==========================================
+
 accept v_nombre    char   prompt 'Nombre del club: '
 accept v_direccion char   prompt 'Direccion: '
 accept v_cp        char   prompt 'Codigo postal: '
