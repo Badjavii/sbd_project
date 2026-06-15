@@ -1,6 +1,13 @@
 -- ==========================================
 -- ARCHIVO: menu/clubes_op7.sql
 -- ==========================================
+
+prompt ==========================================
+prompt   Clubes disponibles:
+prompt ==========================================
+select id_club, nombre, idioma_del_club from sojg_club order by id_club;
+prompt ==========================================
+
 accept v_id_club_1 number prompt 'ID Club 1: '
 accept v_id_club_2 number prompt 'ID Club 2: '
 accept v_fecha     char   prompt 'Fecha asociacion (DD/MM/YYYY): '
