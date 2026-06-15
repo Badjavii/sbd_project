@@ -425,6 +425,220 @@ exception
 end sojg_sp_generar_calendario;
 /
 
+-- SP Especial
+create or replace procedure sojg_sp_generar_calendario_mensual(
+    p_id_club      in number,
+    p_numero_grupo in number,
+    p_isbn_libro   in number,
+    p_id_moderador in number,
+    p_mes          in number,
+    p_anno         in number
+) is
+    v_dia_reunion    varchar2(15);
+    v_dia_num        number;
+    v_fecha          date;
+    v_fecha_inicio   date;
+    v_fecha_fin      date;
+    v_reuniones_gen  number := 0;
+    v_ya_realizadas  number;
+    v_ya_en_mes      number;
+    v_dias_disp      number;
+    v_max_en_mes     number;
+    v_necesita       number;
+    v_categoria      varchar2(10);
+    v_min_miembros   number;
+    v_total_miembros number;
+    v_es_adulto      number;
+    v_mod_ocupado    number;
+    v_mod_ese_dia    number;
+begin
+    -- obtener dia de reunion y categoria del grupo
+    select dia_reunion, categoria_edad into v_dia_reunion, v_categoria
+    from sojg_grupo_de_lectura
+    where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo);
+
+    -- convertir dia a numero oracle (1=domingo, 2=lunes...6=viernes)
+    v_dia_num := case v_dia_reunion
+        when 'Lunes'     then 2
+        when 'Martes'    then 3
+        when 'Miercoles' then 4
+        when 'Jueves'    then 5
+        when 'Viernes'   then 6
+    end;
+
+    -- ==========================================
+    -- VALIDACION 1: minimo de miembros por categoria
+    -- ==========================================
+    v_min_miembros := case v_categoria
+        when 'Adulto' then 10
+        when 'Joven'  then 5
+        when 'Nino'   then 10
+    end;
+
+    select count(*) into v_total_miembros
+    from sojg_historico_grupo_lectura
+    where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+        and (fecha_fin is null);
+
+    if (v_total_miembros < v_min_miembros) then
+        raise_application_error(-20087,
+            'El grupo no tiene suficientes miembros. Minimo requerido para ' ||
+            v_categoria || ': ' || v_min_miembros ||
+            '. Miembros actuales: ' || v_total_miembros || '.');
+    end if;
+
+    -- ==========================================
+    -- VALIDACION 2: moderador debe ser adulto del mismo club
+    -- ==========================================
+    select count(*) into v_es_adulto
+    from sojg_historico_grupo_lectura hgl
+    join sojg_grupo_de_lectura gl
+        on (hgl.id_club = gl.id_club)
+        and (hgl.numero_de_grupo = gl.numero_de_grupo)
+    where (hgl.id_miembro = p_id_moderador)
+        and (hgl.id_club = p_id_club)
+        and (gl.categoria_edad = 'Adulto')
+        and (hgl.fecha_fin is null);
+
+    if (v_es_adulto = 0) then
+        raise_application_error(-20088,
+            'El moderador debe ser un miembro Adulto activo del mismo club.');
+    end if;
+
+    -- ==========================================
+    -- VALIDACION 3: moderador no debe ser moderador de otro grupo activo
+    -- ==========================================
+    select count(*) into v_mod_ocupado
+    from sojg_calendario_mes
+    where (id_moderador = p_id_moderador)
+        and (realizada = 'NO')
+        and not (id_club = p_id_club and numero_de_grupo = p_numero_grupo);
+
+    if (v_mod_ocupado > 0) then
+        raise_application_error(-20089,
+            'El moderador ya esta asignado en otro grupo con discusion activa.');
+    end if;
+
+    -- ==========================================
+    -- VALIDACION 4: moderador no debe tener reunion ese dia en otro grupo
+    -- ==========================================
+    v_fecha_inicio := to_date('01/' || to_char(p_mes, 'FM00') || '/' || to_char(p_anno), 'DD/MM/YYYY');
+    v_fecha_fin    := last_day(v_fecha_inicio);
+
+    select count(*) into v_mod_ese_dia
+    from sojg_calendario_mes cm
+    join sojg_grupo_de_lectura gl
+        on (cm.id_club = gl.id_club)
+        and (cm.numero_de_grupo = gl.numero_de_grupo)
+    where (cm.id_moderador = p_id_moderador)
+        and (gl.dia_reunion = v_dia_reunion)
+        and (cm.fecha_reunion between v_fecha_inicio and v_fecha_fin)
+        and (cm.realizada = 'NO')
+        and not (cm.id_club = p_id_club and cm.numero_de_grupo = p_numero_grupo);
+
+    if (v_mod_ese_dia > 0) then
+        raise_application_error(-20090,
+            'El moderador ya tiene reunion planificada los ' ||
+            v_dia_reunion || ' en otro grupo durante este mes.');
+    end if;
+
+    -- ==========================================
+    -- VALIDACION 5: reuniones ya realizadas del libro
+    -- ==========================================
+    select count(*) into v_ya_realizadas
+    from sojg_calendario_mes
+    where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+        and (isbn_libro = p_isbn_libro) and (realizada = 'SI');
+
+    if (v_ya_realizadas >= 3) then
+        raise_application_error(-20085,
+            'Este libro ya tiene 3 reuniones realizadas. Use cerrar discusion.');
+    end if;
+
+    v_necesita := 3 - v_ya_realizadas;
+
+    -- ==========================================
+    -- CALCULAR DIAS DISPONIBLES EN EL MES
+    -- ==========================================
+    v_dias_disp := 0;
+    v_fecha     := v_fecha_inicio;
+    while (v_fecha <= v_fecha_fin) loop
+        if (to_char(v_fecha, 'D') = to_char(v_dia_num)) then
+            v_dias_disp := v_dias_disp + 1;
+        end if;
+        v_fecha := v_fecha + 1;
+    end loop;
+
+    -- cuantas reuniones del grupo ya estan en ese mes
+    select count(*) into v_ya_en_mes
+    from sojg_calendario_mes
+    where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+        and (extract(month from fecha_reunion) = p_mes)
+        and (extract(year from fecha_reunion) = p_anno);
+
+    v_max_en_mes := v_dias_disp - v_ya_en_mes;
+
+    if (v_max_en_mes <= 0) then
+        raise_application_error(-20086,
+            'No hay dias disponibles en ' ||
+            to_char(v_fecha_inicio, 'Month YYYY') ||
+            '. Todos los ' || v_dia_reunion || ' ya estan ocupados.');
+    end if;
+
+    -- no pasar del maximo necesario ni del maximo disponible en el mes
+    v_necesita := least(v_necesita, v_max_en_mes);
+
+    -- ==========================================
+    -- GENERAR REUNIONES
+    -- ==========================================
+    -- encontrar el primer dia disponible del mes
+    v_fecha := v_fecha_inicio;
+    while (to_char(v_fecha, 'D') != to_char(v_dia_num)) loop
+        v_fecha := v_fecha + 1;
+    end loop;
+
+    while (v_fecha <= v_fecha_fin and v_reuniones_gen < v_necesita) loop
+        declare
+            v_existe number;
+        begin
+            select count(*) into v_existe
+            from sojg_calendario_mes
+            where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+                and (fecha_reunion = v_fecha);
+
+            if (v_existe = 0) then
+                sojg_sp_generar_calendario(
+                    p_id_club      => p_id_club,
+                    p_numero_grupo => p_numero_grupo,
+                    p_isbn_libro   => p_isbn_libro,
+                    p_id_moderador => p_id_moderador,
+                    p_fecha        => v_fecha
+                );
+                v_reuniones_gen := v_reuniones_gen + 1;
+            end if;
+        end;
+        v_fecha := v_fecha + 7;
+    end loop;
+
+    if (v_reuniones_gen = 0) then
+        raise_application_error(-20091,
+            'No se pudieron generar reuniones para este mes.');
+    end if;
+
+    dbms_output.put_line('Se generaron ' || v_reuniones_gen || ' reunion(es) para ' ||
+        to_char(v_fecha_inicio, 'Month YYYY') || '.');
+    dbms_output.put_line('Reuniones realizadas del libro: ' || v_ya_realizadas ||
+        ' | Quedan por realizar: ' || (3 - v_ya_realizadas - v_reuniones_gen));
+
+    commit;
+exception
+    when no_data_found then
+        raise_application_error(-20092, 'El club o grupo especificado no existe.');
+    when others then
+        rollback; raise;
+end sojg_sp_generar_calendario_mensual;
+/
+
 -- SP10: Asignar moderador
 create or replace procedure sojg_sp_asignar_moderador(
     p_id_club      in number,
