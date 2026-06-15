@@ -1,6 +1,13 @@
 -- ==========================================
 -- ARCHIVO: menu/obras_op1.sql
 -- ==========================================
+
+prompt ==========================================
+prompt   Clubes disponibles:
+prompt ==========================================
+select id_club, nombre, idioma_del_club from sojg_club order by id_club;
+prompt ==========================================
+
 accept v_titulo  char   prompt 'Titulo de la obra: '
 accept v_activa  char   prompt 'Activa (SI/NO): '
 accept v_desc    char   prompt 'Descripcion: '
