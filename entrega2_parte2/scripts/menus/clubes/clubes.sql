@@ -18,6 +18,7 @@ prompt   5. Expulsar miembro
 prompt   6. Registrar pago de membresia
 prompt   7. Asociar clubes
 prompt   8. Split de grupo
+prompt   9. Gestionar pago de membresia
 prompt   0. Volver al menu principal
 prompt ==========================================
 accept v_opcion number prompt 'Seleccione una opcion: '
@@ -33,6 +34,7 @@ select case &v_opcion
     when 6 then '&base_path/clubes/clubes_op6.sql'
     when 7 then '&base_path/clubes/clubes_op7.sql'
     when 8 then '&base_path/clubes/clubes_op8.sql'
+    when 9 then '&base_path/clubes/clubes_op9.sql'
     else '&base_path/noop.sql'
 end as run_op from dual;
 set termout on
