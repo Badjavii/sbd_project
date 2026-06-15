@@ -1,0 +1,131 @@
+<!-- Created with Jaspersoft Studio version 7.0.6.final using JasperReports Library version 7.0.6-5d2a603fdc6b3db8f842a83383e594f41891534d  -->
+<jasperReport name="SOJG_Ficha_Club_Personalizada" language="java" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="bc2da84a-71a2-4aef-bbdf-b749be9d4a41">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="Oracle_Docker_Lucia"/>
+	<parameter name="ID_CLUB_PARAM" class="java.math.BigDecimal">
+		<description><![CDATA[Ingrese el ID del Club de Lectura que desea consultar]]></description>
+	</parameter>
+	<query language="sql"><![CDATA[SELECT 
+            id_club,
+            nombre_club,
+            direccion,
+            codigo_postal,
+            idioma_del_club,
+            ciudad,
+            pais,
+            tipo_club,
+            NVL(institucion, 'Ninguna (Asociación Libre)') AS institucion,
+            tipo_grupo,
+            miembros_activos,
+            NVL(libro_analizado, 'Sin registro de lectura') AS libro_analizado,
+            NVL(TO_CHAR(valoracion), 'S/V') AS valoracion
+        FROM sojg_v_reporte_ficha_club
+        WHERE id_club = $P{ID_CLUB_PARAM}]]></query>
+	<field name="ID_CLUB" class="java.math.BigDecimal"/>
+	<field name="NOMBRE_CLUB" class="java.lang.String"/>
+	<field name="DIRECCION" class="java.lang.String"/>
+	<field name="CODIGO_POSTAL" class="java.lang.String"/>
+	<field name="IDIOMA_DEL_CLUB" class="java.lang.String"/>
+	<field name="CIUDAD" class="java.lang.String"/>
+	<field name="PAIS" class="java.lang.String"/>
+	<field name="TIPO_CLUB" class="java.lang.String"/>
+	<field name="INSTITUCION" class="java.lang.String"/>
+	<field name="TIPO_GRUPO" class="java.lang.String"/>
+	<field name="MIEMBROS_ACTIVOS" class="java.math.BigDecimal"/>
+	<field name="LIBRO_ANALIZADO" class="java.lang.String"/>
+	<field name="VALORACION" class="java.lang.String"/>
+	<background splitType="Stretch"/>
+	<title height="50" splitType="Stretch">
+		<element kind="staticText" uuid="9e1a3848-1234-4bc3-9999-e65b5cb12e3c" x="0" y="5" width="345" height="20" forecolor="#1A659E" fontName="Arial" fontSize="14.0" bold="true">
+			<text><![CDATA[SISTEMA DE CLUBES DE LECTURA · UCAB]]></text>
+		</element>
+		<element kind="line" uuid="7bf38510-1c1a-4713-98fe-08bb29094fe0" x="0" y="32" width="555" height="1" forecolor="#FF6B35">
+			<pen lineWidth="2.0"/>
+		</element>
+		<element kind="textField" uuid="4fa217a4-31bf-4b95-a430-c081e748bde2" x="440" y="8" width="115" height="15" forecolor="#718096" fontName="Arial" fontSize="9.0" pattern="dd/MM/yyyy" bold="true" hTextAlign="Right">
+			<expression><![CDATA[new java.util.Date()]]></expression>
+		</element>
+	</title>
+	<pageHeader height="155" splitType="Stretch">
+		<element kind="rectangle" uuid="1a3b37ff-90a8-4421-9d22-1fcbf8a2b5aa" mode="Opaque" x="0" y="0" width="555" height="65" backcolor="#1A659E">
+			<pen lineWidth="0.0"/>
+		</element>
+		<element kind="textField" uuid="6fa217a4-31bf-4b95-a430-c081e748bde2" x="15" y="10" width="355" height="45" forecolor="#FFFFFF" fontName="Arial" fontSize="16.0" bold="true" vTextAlign="Middle">
+			<expression><![CDATA[$F{NOMBRE_CLUB}.toUpperCase()]]></expression>
+		</element>
+		<element kind="textField" uuid="7fa217a4-31bf-4b95-a430-c081e748bde2" x="410" y="40" width="135" height="15" forecolor="#F7C59F" fontName="Arial" fontSize="10.0" italic="true">
+			<expression><![CDATA["Código de Instancia: " + $F{ID_CLUB}]]></expression>
+		</element>
+		<element kind="textField" uuid="8fa217a4-31bf-4b95-a430-c081e748bde2" x="410" y="12" width="130" height="20" forecolor="#FFFFFF" fontName="Arial" fontSize="11.0" bold="true" hTextAlign="Right" vTextAlign="Middle">
+			<expression><![CDATA[$F{TIPO_CLUB}.toUpperCase()]]></expression>
+		</element>
+		<element kind="rectangle" uuid="1bfa82a1-12c2-44df-99ef-8716bca23211" mode="Opaque" x="0" y="75" width="555" height="65" backcolor="#FFFDFB">
+			<pen lineWidth="1.0" lineColor="#F7C59F"/>
+		</element>
+		<element kind="staticText" uuid="d1e53c44-e2a2-4935-b286-90f7d5c9c30f" x="15" y="82" width="55" height="15" forecolor="#1A659E" fontName="Arial" fontSize="9.0" bold="true">
+			<text><![CDATA[Ubicación:]]></text>
+		</element>
+		<element kind="textField" uuid="9fa217a4-31bf-4b95-a430-c081e748bde2" x="75" y="82" width="200" height="15" forecolor="#2D3748" fontName="Arial" fontSize="9.0">
+			<expression><![CDATA[$F{CIUDAD} + ", " + $F{PAIS}]]></expression>
+		</element>
+		<element kind="staticText" uuid="d2e53c44-e2a2-4935-b286-90f7d5c9c30f" x="15" y="102" width="55" height="15" forecolor="#1A659E" fontName="Arial" fontSize="9.0" bold="true">
+			<text><![CDATA[Dirección:]]></text>
+		</element>
+		<element kind="textField" uuid="0fa217a4-31bf-4b95-a430-c081e748bde2" x="75" y="102" width="200" height="30" forecolor="#2D3748" fontName="Arial" fontSize="9.0">
+			<expression><![CDATA[$F{DIRECCION} + " (C.P. " + $F{CODIGO_POSTAL} + ")"]]></expression>
+		</element>
+		<element kind="staticText" uuid="d3e53c44-e2a2-4935-b286-90f7d5c9c30f" x="295" y="82" width="65" height="15" forecolor="#1A659E" fontName="Arial" fontSize="9.0" bold="true">
+			<text><![CDATA[Idioma Club:]]></text>
+		</element>
+		<element kind="textField" uuid="1fa217a4-31bf-4b95-a430-c081e748bde2" x="370" y="82" width="170" height="15" forecolor="#2D3748" fontName="Arial" fontSize="9.0" bold="true">
+			<expression><![CDATA[$F{IDIOMA_DEL_CLUB}]]></expression>
+		</element>
+		<element kind="staticText" uuid="d4e53c44-e2a2-4935-b286-90f7d5c9c30f" x="295" y="102" width="65" height="15" forecolor="#1A659E" fontName="Arial" fontSize="9.0" bold="true">
+			<text><![CDATA[Institución:]]></text>
+		</element>
+		<element kind="textField" uuid="2fa217a4-31bf-4b95-a430-c081e748bde2" x="370" y="102" width="170" height="30" forecolor="#2D3748" fontName="Arial" fontSize="9.0">
+			<expression><![CDATA[$F{INSTITUCION}]]></expression>
+		</element>
+	</pageHeader>
+	<columnHeader height="25" splitType="Stretch">
+		<element kind="rectangle" uuid="7a3b37ff-90a8-4421-9d22-1fcbf8a2b5ff" mode="Opaque" x="0" y="3" width="555" height="20" backcolor="#FF6B35">
+			<pen lineWidth="0.0"/>
+		</element>
+		<element kind="staticText" uuid="e1e53c44-e2a2-4935-b286-90f7d5c9c30f" x="15" y="6" width="120" height="14" forecolor="#FFFFFF" fontName="Arial" fontSize="9.0" bold="true">
+			<text><![CDATA[CATEGORÍA GRUPO]]></text>
+		</element>
+		<element kind="staticText" uuid="e2e53c44-e2a2-4935-b286-90f7d5c9c30f" x="145" y="6" width="70" height="14" forecolor="#FFFFFF" fontName="Arial" fontSize="9.0" bold="true" hTextAlign="Center">
+			<text><![CDATA[ACTIVOS]]></text>
+		</element>
+		<element kind="staticText" uuid="e3e53c44-e2a2-4935-b286-90f7d5c9c30f" x="225" y="6" width="245" height="14" forecolor="#FFFFFF" fontName="Arial" fontSize="9.0" bold="true">
+			<text><![CDATA[ÚLTIMO LIBRO ANALIZADO u OBRA ASOCIADA]]></text>
+		</element>
+		<element kind="staticText" uuid="e4e53c44-e2a2-4935-b286-90f7d5c9c30f" x="480" y="6" width="60" height="14" forecolor="#FFFFFF" fontName="Arial" fontSize="9.0" bold="true" hTextAlign="Center">
+			<text><![CDATA[RATING]]></text>
+		</element>
+	</columnHeader>
+	<detail>
+		<band height="24" splitType="Stretch">
+			<element kind="line" uuid="bcda8433-21c2-4bef-b7ef-b749be9d4a31" x="0" y="22" width="555" height="1" forecolor="#F7C59F"/>
+			<element kind="textField" uuid="3fa217a4-31bf-4b95-a430-c081e748bde2" x="15" y="4" width="120" height="15" fontName="Arial" fontSize="9.0" bold="true">
+				<expression><![CDATA[$F{TIPO_GRUPO}]]></expression>
+			</element>
+			<element kind="textField" uuid="4fa217a4-31bf-4b95-a430-c081e748bde5" x="145" y="4" width="70" height="15" fontName="Arial" fontSize="9.0" hTextAlign="Center">
+				<expression><![CDATA[$F{MIEMBROS_ACTIVOS}]]></expression>
+			</element>
+			<element kind="textField" uuid="5fa217a4-31bf-4b95-a430-c081e748bde2" x="225" y="4" width="245" height="15" forecolor="#2D3748" fontName="Arial" fontSize="9.0" italic="true">
+				<expression><![CDATA[$F{LIBRO_ANALIZADO}]]></expression>
+			</element>
+			<element kind="textField" uuid="6fa217a4-31bf-4b95-a430-c081e748bde5" x="480" y="4" width="60" height="15" forecolor="#1A659E" fontName="Arial" fontSize="9.0" bold="true" hTextAlign="Center">
+				<expression><![CDATA[$F{VALORACION}]]></expression>
+			</element>
+		</band>
+	</detail>
+	<pageFooter height="25" splitType="Stretch">
+		<element kind="textField" uuid="7fa217a4-31bf-4b95-a430-c081e748bde2" x="435" y="5" width="80" height="15" forecolor="#718096" fontName="Arial" fontSize="8.0" hTextAlign="Right">
+			<expression><![CDATA["Página "+$V{PAGE_NUMBER}+" de"]]></expression>
+		</element>
+		<element kind="textField" uuid="8fa217a4-31bf-4b95-a430-c081e748bde2" x="515" y="5" width="40" height="15" forecolor="#718096" fontName="Arial" fontSize="8.0" evaluationTime="Report">
+			<expression><![CDATA[" " + $V{PAGE_NUMBER}]]></expression>
+		</element>
+	</pageFooter>
+</jasperReport>
