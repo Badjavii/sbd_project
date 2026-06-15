@@ -1,6 +1,17 @@
 -- ==========================================
 -- ARCHIVO: menu/clubes_op4.sql
 -- ==========================================
+
+prompt ==========================================
+prompt   Miembros activos:
+prompt ==========================================
+select l.id_miembro, l.nombre || ' ' || l.apellido as nombre, hm.id_club
+from sojg_lector l
+join sojg_historico_membresia hm on (l.id_miembro = hm.id_miembro)
+where (hm.estatus = 'Activa')
+order by l.id_miembro;
+prompt ==========================================
+
 accept v_id_miembro number prompt 'ID Miembro: '
 accept v_id_club    number prompt 'ID Club: '
 accept v_fecha      char   prompt 'Fecha retiro (DD/MM/YYYY): '
