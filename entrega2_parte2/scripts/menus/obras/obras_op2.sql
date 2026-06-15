@@ -1,6 +1,22 @@
 -- ==========================================
 -- ARCHIVO: menu/obras_op2.sql
 -- ==========================================
+
+prompt ==========================================
+prompt   Obras activas:
+prompt ==========================================
+select id_obra, titulo_de_obra, id_club from sojg_obra
+where (activa = 'SI') order by id_obra;
+prompt ==========================================
+prompt   Miembros activos:
+prompt ==========================================
+select l.id_miembro, l.nombre || ' ' || l.apellido as nombre, hm.id_club
+from sojg_lector l
+join sojg_historico_membresia hm on (l.id_miembro = hm.id_miembro)
+where (hm.estatus = 'Activa')
+order by hm.id_club, l.id_miembro;
+prompt ==========================================
+
 accept v_id_obra    number prompt 'ID Obra: '
 accept v_id_miembro number prompt 'ID Miembro: '
  
