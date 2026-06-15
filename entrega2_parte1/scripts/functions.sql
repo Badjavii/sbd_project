@@ -53,29 +53,24 @@ END;
 commit;
 
 -- Funcion: Calcular antiguedad de un miembro en el club
-create or replace function sojg_antiguedad_en_el_club_miembro (
+create or replace function sojg_antiguedad_en_el_club_miembro(
     p_id_miembro in number,
-    p_id_club in number
+    p_id_club    in number
 ) return number is
     v_fecha_inicio date;
-    v_fecha_fin date;
-    v_antiguedad number := 0;
+    v_antiguedad   number := 0;
 begin
-    select fecha_inicio_membresia, fecha_fin
-    into v_fecha_inicio, v_fecha_fin
+    -- tomar la fecha de inicio mas antigua del miembro en ese club
+    select min(fecha_inicio_membresia) into v_fecha_inicio
     from sojg_historico_membresia
-    where id_miembro = p_id_miembro
-      and id_club = p_id_club
-      and rownum = 1;
+    where (id_miembro = p_id_miembro) and (id_club = p_id_club);
 
-    v_antiguedad := months_between(nvl(v_fecha_fin, sysdate), v_fecha_inicio) / 12;
+    if (v_fecha_inicio is null) then return 0; end if;
 
+    v_antiguedad := months_between(sysdate, v_fecha_inicio) / 12;
     return trunc(v_antiguedad, 2);
 exception
-    when no_data_found then
-        return 0;
-    when others then
-        return 0;
+    when others then return 0;
 end sojg_antiguedad_en_el_club_miembro;
 /
 
