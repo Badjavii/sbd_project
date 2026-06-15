@@ -51,44 +51,124 @@ WHERE ID_MIEMBRO = $P{P_ID_MIEMBRO}]]>
 		<queryString language="SQL">
 			<![CDATA[SELECT "ISBN_LIBRO", "ORDEN_PREFERENCIA"
 FROM "SOJG_PREFERENCIA_LECTURA"
-WHERE ID_MIEMBRO = $P{P_ID_MIEMBRO}]]>
+WHERE ID_MIEMBRO = $P{P_ID_MIEMBRO}
+ORDER BY  "SOJG_PREFERENCIA_LECTURA"."ORDEN_PREFERENCIA" DESC]]>
+		</queryString>
+		<field name="ISBN_LIBRO" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="ISBN_LIBRO"/>
+			<property name="com.jaspersoft.studio.field.label" value="ISBN_LIBRO"/>
+		</field>
+		<field name="ORDEN_PREFERENCIA" class="java.math.BigDecimal">
+			<property name="com.jaspersoft.studio.field.name" value="ORDEN_PREFERENCIA"/>
+			<property name="com.jaspersoft.studio.field.label" value="ORDEN_PREFERENCIA"/>
+		</field>
+	</subDataset>
+	<subDataset name="DatasetLibrosAnalizados" uuid="f7a3b8c1-9d4e-4a2f-8c71-b6e5f2a8d7c3">
+		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="Oracle Adapter"/>
+		<parameter name="P_ID_MIEMBRO" class="java.lang.Integer"/>
+		<queryString language="SQL">
+			<![CDATA[SELECT DISTINCT LIBRO_ANALIZADO AS ISBN_LIBRO, TITULO
+FROM SOJG_V_REPORTE_FICHA_MIEMBRO
+WHERE ID_MIEMBRO = $P{P_ID_MIEMBRO}
+AND LIBRO_ANALIZADO IS NOT NULL]]>
 		</queryString>
 		<field name="ISBN_LIBRO" class="java.math.BigDecimal"/>
-		<field name="ORDEN_PREFERENCIA" class="java.math.BigDecimal"/>
+		<field name="TITULO" class="java.lang.String"/>
 	</subDataset>
 	<parameter name="P_ID_MIEMBRO" class="java.lang.Integer">
 		<parameterDescription><![CDATA[ID del miembro a consultar]]></parameterDescription>
 		<defaultValueExpression><![CDATA[1]]></defaultValueExpression>
 	</parameter>
 	<queryString>
-		<![CDATA[SELECT * FROM SOJG_V_REPORTE_FICHA_MIEMBRO WHERE ID_MIEMBRO = $P{P_ID_MIEMBRO}]]>
+		<![CDATA[SELECT DISTINCT 
+    ID_MIEMBRO, ID_CLUB, FECHA_INICIO_MEMBRESIA, FECHA_FIN, ESTATUS, MOTIVO_RETIRO,
+    LIBRO_PREFERIDO, ORDEN_PREFERENCIA, NUMERO_DE_GRUPO,
+    NOMBRE, SEGUNDO_NOMBRE, APELLIDO, SEGUNDO_APELLIDO, CORREO_ELECTRONICO,
+    DOCUMENTO_IDENTIDAD, FECHA_NACIMIENTO, IDIOMAS, AUTORIZACION_REPRESENTANTE, NOMBRE_COMPLETO
+FROM SOJG_V_REPORTE_FICHA_MIEMBRO
+WHERE ID_MIEMBRO = $P{P_ID_MIEMBRO}]]>
 	</queryString>
-	<field name="ID_MIEMBRO" class="java.math.BigDecimal"/>
-	<field name="ID_CLUB" class="java.math.BigDecimal"/>
-	<field name="FECHA_INICIO_MEMBRESIA" class="java.sql.Timestamp"/>
-	<field name="FECHA_FIN" class="java.sql.Timestamp"/>
-	<field name="ESTATUS" class="java.lang.String"/>
-	<field name="MOTIVO_RETIRO" class="java.lang.String"/>
-	<field name="LIBRO_PREFERIDO" class="java.math.BigDecimal"/>
-	<field name="ORDEN_PREFERENCIA" class="java.math.BigDecimal"/>
-	<field name="NUMERO_DE_GRUPO" class="java.math.BigDecimal"/>
-	<field name="LIBRO_ANALIZADO" class="java.math.BigDecimal"/>
-	<field name="FECHA_REUNION" class="java.sql.Timestamp"/>
-	<field name="REALIZADA" class="java.lang.String"/>
-	<field name="NOMBRE" class="java.lang.String"/>
-	<field name="SEGUNDO_NOMBRE" class="java.lang.String"/>
-	<field name="APELLIDO" class="java.lang.String"/>
-	<field name="SEGUNDO_APELLIDO" class="java.lang.String"/>
-	<field name="CORREO_ELECTRONICO" class="java.lang.String"/>
-	<field name="DOCUMENTO_IDENTIDAD" class="java.lang.String"/>
-	<field name="FECHA_NACIMIENTO" class="java.sql.Timestamp"/>
-	<field name="IDIOMAS" class="java.lang.String"/>
-	<field name="AUTORIZACION_REPRESENTANTE" class="java.lang.String"/>
-	<field name="NOMBRE_COMPLETO" class="java.lang.String"/>
-	<group name="GrupoMiembro" isStartNewPage="true">
+	<field name="ID_MIEMBRO" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="ID_MIEMBRO"/>
+		<property name="com.jaspersoft.studio.field.label" value="ID_MIEMBRO"/>
+	</field>
+	<field name="ID_CLUB" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="ID_CLUB"/>
+		<property name="com.jaspersoft.studio.field.label" value="ID_CLUB"/>
+	</field>
+	<field name="FECHA_INICIO_MEMBRESIA" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="FECHA_INICIO_MEMBRESIA"/>
+		<property name="com.jaspersoft.studio.field.label" value="FECHA_INICIO_MEMBRESIA"/>
+	</field>
+	<field name="FECHA_FIN" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="FECHA_FIN"/>
+		<property name="com.jaspersoft.studio.field.label" value="FECHA_FIN"/>
+	</field>
+	<field name="ESTATUS" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="ESTATUS"/>
+		<property name="com.jaspersoft.studio.field.label" value="ESTATUS"/>
+	</field>
+	<field name="MOTIVO_RETIRO" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="MOTIVO_RETIRO"/>
+		<property name="com.jaspersoft.studio.field.label" value="MOTIVO_RETIRO"/>
+	</field>
+	<field name="LIBRO_PREFERIDO" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="LIBRO_PREFERIDO"/>
+		<property name="com.jaspersoft.studio.field.label" value="LIBRO_PREFERIDO"/>
+	</field>
+	<field name="ORDEN_PREFERENCIA" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="ORDEN_PREFERENCIA"/>
+		<property name="com.jaspersoft.studio.field.label" value="ORDEN_PREFERENCIA"/>
+	</field>
+	<field name="NUMERO_DE_GRUPO" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="NUMERO_DE_GRUPO"/>
+		<property name="com.jaspersoft.studio.field.label" value="NUMERO_DE_GRUPO"/>
+	</field>
+	<field name="NOMBRE" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="NOMBRE"/>
+		<property name="com.jaspersoft.studio.field.label" value="NOMBRE"/>
+	</field>
+	<field name="SEGUNDO_NOMBRE" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="SEGUNDO_NOMBRE"/>
+		<property name="com.jaspersoft.studio.field.label" value="SEGUNDO_NOMBRE"/>
+	</field>
+	<field name="APELLIDO" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="APELLIDO"/>
+		<property name="com.jaspersoft.studio.field.label" value="APELLIDO"/>
+	</field>
+	<field name="SEGUNDO_APELLIDO" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="SEGUNDO_APELLIDO"/>
+		<property name="com.jaspersoft.studio.field.label" value="SEGUNDO_APELLIDO"/>
+	</field>
+	<field name="CORREO_ELECTRONICO" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="CORREO_ELECTRONICO"/>
+		<property name="com.jaspersoft.studio.field.label" value="CORREO_ELECTRONICO"/>
+	</field>
+	<field name="DOCUMENTO_IDENTIDAD" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="DOCUMENTO_IDENTIDAD"/>
+		<property name="com.jaspersoft.studio.field.label" value="DOCUMENTO_IDENTIDAD"/>
+	</field>
+	<field name="FECHA_NACIMIENTO" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="FECHA_NACIMIENTO"/>
+		<property name="com.jaspersoft.studio.field.label" value="FECHA_NACIMIENTO"/>
+	</field>
+	<field name="IDIOMAS" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="IDIOMAS"/>
+		<property name="com.jaspersoft.studio.field.label" value="IDIOMAS"/>
+	</field>
+	<field name="AUTORIZACION_REPRESENTANTE" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="AUTORIZACION_REPRESENTANTE"/>
+		<property name="com.jaspersoft.studio.field.label" value="AUTORIZACION_REPRESENTANTE"/>
+	</field>
+	<field name="NOMBRE_COMPLETO" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="NOMBRE_COMPLETO"/>
+		<property name="com.jaspersoft.studio.field.label" value="NOMBRE_COMPLETO"/>
+	</field>
+	<group name="GrupoMiembro">
 		<groupExpression><![CDATA[$F{ID_MIEMBRO}]]></groupExpression>
 		<groupHeader>
-			<band height="145">
+			<band height="195">
 				<rectangle>
 					<reportElement mode="Opaque" x="0" y="5" width="782" height="3" forecolor="#C5CAE9" backcolor="#C5CAE9" uuid="c5edfe1b-a6cc-4375-8717-7e975f6d2dad"/>
 					<graphicElement>
@@ -256,17 +336,7 @@ WHERE ID_MIEMBRO = $P{P_ID_MIEMBRO}]]>
 					<text><![CDATA[  LIBROS ANALIZADOS EN REUNIONES]]></text>
 				</staticText>
 				<staticText>
-					<reportElement mode="Opaque" x="0" y="134" width="120" height="11" forecolor="#FFFFFF" backcolor="#FF6B35" uuid="7b65c586-fa1e-4aa7-9a72-6e616f493047"/>
-					<box>
-						<pen lineWidth="0.25" lineColor="#FFFFFF"/>
-					</box>
-					<textElement textAlignment="Center" verticalAlignment="Middle">
-						<font fontName="Arial" size="7" isBold="true"/>
-					</textElement>
-					<text><![CDATA[ID CLUB]]></text>
-				</staticText>
-				<staticText>
-					<reportElement mode="Opaque" x="120" y="134" width="230" height="11" forecolor="#FFFFFF" backcolor="#FF6B35" uuid="4dbdb1e8-bee0-48d3-9505-e77fe476bfd0"/>
+					<reportElement mode="Opaque" x="0" y="134" width="350" height="11" forecolor="#FFFFFF" backcolor="#FF6B35" uuid="4dbdb1e8-bee0-48d3-9505-e77fe476bfd0"/>
 					<box>
 						<pen lineWidth="0.25" lineColor="#FFFFFF"/>
 					</box>
@@ -276,35 +346,66 @@ WHERE ID_MIEMBRO = $P{P_ID_MIEMBRO}]]>
 					<text><![CDATA[ISBN LIBRO ANALIZADO]]></text>
 				</staticText>
 				<staticText>
-					<reportElement mode="Opaque" x="350" y="134" width="160" height="11" forecolor="#FFFFFF" backcolor="#FF6B35" uuid="eb02f20c-f163-4669-82ca-6c3bc329a1db"/>
+					<reportElement mode="Opaque" x="350" y="134" width="432" height="11" forecolor="#FFFFFF" backcolor="#FF6B35" uuid="eb02f20c-f163-4669-82ca-6c3bc329a1db"/>
 					<box>
 						<pen lineWidth="0.25" lineColor="#FFFFFF"/>
 					</box>
 					<textElement textAlignment="Center" verticalAlignment="Middle">
 						<font fontName="Arial" size="7" isBold="true"/>
 					</textElement>
-					<text><![CDATA[FECHA REUNIÓN]]></text>
+					<text><![CDATA[TITULO DEL LIBRO]]></text>
 				</staticText>
-				<staticText>
-					<reportElement mode="Opaque" x="510" y="134" width="120" height="11" forecolor="#FFFFFF" backcolor="#FF6B35" uuid="f1e8747e-aee0-47a4-ba2f-25e93a7a64fc"/>
-					<box>
-						<pen lineWidth="0.25" lineColor="#FFFFFF"/>
-					</box>
-					<textElement textAlignment="Center" verticalAlignment="Middle">
-						<font fontName="Arial" size="7" isBold="true"/>
-					</textElement>
-					<text><![CDATA[NÚMERO DE GRUPO]]></text>
-				</staticText>
-				<staticText>
-					<reportElement mode="Opaque" x="630" y="134" width="152" height="11" forecolor="#FFFFFF" backcolor="#FF6B35" uuid="254ca057-f270-4cbb-a447-f54b75729af5"/>
-					<box>
-						<pen lineWidth="0.25" lineColor="#FFFFFF"/>
-					</box>
-					<textElement textAlignment="Center" verticalAlignment="Middle">
-						<font fontName="Arial" size="7" isBold="true"/>
-					</textElement>
-					<text><![CDATA[REALIZADA]]></text>
-				</staticText>
+				<componentElement>
+					<reportElement x="0" y="145" width="782" height="50" uuid="a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"/>
+					<jr:table xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
+						<datasetRun subDataset="DatasetLibrosAnalizados" uuid="b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e">
+							<datasetParameter name="P_ID_MIEMBRO">
+								<datasetParameterExpression><![CDATA[$P{P_ID_MIEMBRO}]]></datasetParameterExpression>
+							</datasetParameter>
+							<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+						</datasetRun>
+						<jr:column width="350" uuid="c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f">
+							<jr:columnHeader style="Table_CH" height="18">
+								<staticText>
+									<reportElement style="ESTILO_COL_HEADER" x="0" y="0" width="350" height="18" backcolor="#FF6B35" uuid="d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a"/>
+									<textElement verticalAlignment="Middle">
+										<font size="8"/>
+									</textElement>
+									<text><![CDATA[ISBN]]></text>
+								</staticText>
+							</jr:columnHeader>
+							<jr:detailCell style="Table_TD" height="16">
+								<textField isBlankWhenNull="true">
+									<reportElement x="5" y="0" width="340" height="16" uuid="e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9b"/>
+									<textElement textAlignment="Center" verticalAlignment="Middle">
+										<font size="8"/>
+									</textElement>
+									<textFieldExpression><![CDATA[$F{ISBN_LIBRO}]]></textFieldExpression>
+								</textField>
+							</jr:detailCell>
+						</jr:column>
+						<jr:column width="432" uuid="f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b0c">
+							<jr:columnHeader style="Table_CH" height="18">
+								<staticText>
+									<reportElement style="ESTILO_COL_HEADER" x="0" y="0" width="432" height="18" backcolor="#FF6B35" uuid="a7b8c9d0-e1f2-4a3b-4c5d-6e7f8a9b0c1d"/>
+									<textElement verticalAlignment="Middle">
+										<font size="8"/>
+									</textElement>
+									<text><![CDATA[Título del Libro]]></text>
+								</staticText>
+							</jr:columnHeader>
+							<jr:detailCell style="Table_TD" height="16">
+								<textField isBlankWhenNull="true">
+									<reportElement x="5" y="0" width="422" height="16" uuid="b8c9d0e1-f2a3-4b4c-5d6e-7f8a9b0c1d2e"/>
+									<textElement textAlignment="Left" verticalAlignment="Middle">
+										<font size="8"/>
+									</textElement>
+									<textFieldExpression><![CDATA[$F{TITULO}]]></textFieldExpression>
+								</textField>
+							</jr:detailCell>
+						</jr:column>
+					</jr:table>
+				</componentElement>
 			</band>
 		</groupHeader>
 		<groupFooter>
@@ -519,60 +620,6 @@ WHERE ID_MIEMBRO = $P{P_ID_MIEMBRO}]]>
 			</textField>
 		</band>
 	</title>
-	<detail>
-		<band height="14" splitType="Stretch">
-			<textField isBlankWhenNull="true">
-				<reportElement x="0" y="0" width="120" height="14" uuid="d024b1a4-96d2-43bb-8be5-6126ca5187e4"/>
-				<box>
-					<pen lineWidth="0.25" lineColor="#E0E0E0"/>
-				</box>
-				<textElement textAlignment="Center" verticalAlignment="Middle">
-					<font fontName="Arial" size="8"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{ID_CLUB}]]></textFieldExpression>
-			</textField>
-			<textField isBlankWhenNull="true">
-				<reportElement x="120" y="0" width="230" height="14" uuid="e0503099-31bf-4b47-ba03-31626f22da2b"/>
-				<box>
-					<pen lineWidth="0.25" lineColor="#E0E0E0"/>
-				</box>
-				<textElement textAlignment="Center" verticalAlignment="Middle">
-					<font fontName="Arial" size="8"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{LIBRO_ANALIZADO}]]></textFieldExpression>
-			</textField>
-			<textField isBlankWhenNull="true">
-				<reportElement x="350" y="0" width="160" height="14" uuid="2e318df2-06bd-4df3-8ba4-cbf46bd861fa"/>
-				<box>
-					<pen lineWidth="0.25" lineColor="#E0E0E0"/>
-				</box>
-				<textElement textAlignment="Center" verticalAlignment="Middle">
-					<font fontName="Arial" size="8"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{FECHA_REUNION} != null ? new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format($F{FECHA_REUNION}) : "-"]]></textFieldExpression>
-			</textField>
-			<textField isBlankWhenNull="true">
-				<reportElement x="510" y="0" width="120" height="14" uuid="93bf1de3-b541-4712-be20-f16bb6fd6f8c"/>
-				<box>
-					<pen lineWidth="0.25" lineColor="#E0E0E0"/>
-				</box>
-				<textElement textAlignment="Center" verticalAlignment="Middle">
-					<font fontName="Arial" size="8"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{NUMERO_DE_GRUPO}]]></textFieldExpression>
-			</textField>
-			<textField isBlankWhenNull="true">
-				<reportElement x="630" y="0" width="152" height="14" uuid="451da74d-bf72-401d-8720-6d4b96dfdaee"/>
-				<box>
-					<pen lineWidth="0.25" lineColor="#E0E0E0"/>
-				</box>
-				<textElement textAlignment="Center" verticalAlignment="Middle">
-					<font fontName="Arial" size="8"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{REALIZADA}]]></textFieldExpression>
-			</textField>
-		</band>
-	</detail>
 	<pageFooter>
 		<band height="30" splitType="Stretch">
 			<rectangle>
