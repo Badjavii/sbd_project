@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 9.0.3.final using JasperReports Library version 6.21.6-ef58807af469abb082e2f734b1e78a3c47daad18  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="SOJG_Reporte_Financiero_Avanzado" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="f3d38510-1c1a-4713-98fe-08bb29094fe0">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="Oracle Adapter"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<queryString>
+		<![CDATA[WITH ConteoGrupos AS (
+    SELECT 
+        h.id_club,
+        COUNT(DISTINCT h.numero_de_grupo) AS cant_grupos_distinct,
+        COUNT(*) AS cant_grupos_total
+    FROM SOJG_HISTORICO_GRUPO_LECTURA h
+    WHERE h.fecha_fin IS NULL
+    GROUP BY h.id_club
+)
+SELECT 
+    v.id_club,
+    v.nombre_club,
+    v.ciudad,
+    p.nombre AS pais,
+    v.anno,
+    NVL(v.total_ingresos_membresia, 0) AS total_ingresos_membresia,
+    NVL(v.total_recaudacion_obras, 0) AS total_recaudacion_obras,
+    NVL(v.total_ingresos_membresia, 0) + NVL(v.total_recaudacion_obras, 0) AS ingresos_totales,
+    NVL(cg.cant_grupos_distinct, 0) AS cantidad_grupos,
+    CASE 
+        WHEN (NVL(cg.cant_grupos_total, 0) > 0)
+        THEN NVL(v.total_ingresos_membresia, 0) + NVL(v.total_recaudacion_obras, 0) / cg.cant_grupos_total
+        ELSE 0
+    END AS ticket_promedio_usd
+FROM vw_reporte_financiero v
+LEFT JOIN SOJG_CLUB c ON (v.id_club = c.id_club)
+LEFT JOIN SOJG_CIUDAD ci ON (c.id_ciudad = ci.id)
+LEFT JOIN SOJG_PAIS p ON (ci.id_pais = p.id)
+LEFT JOIN ConteoGrupos cg ON (v.id_club = cg.id_club)
+WHERE v.anno IS NOT NULL
+ORDER BY p.nombre ASC, v.anno DESC, v.nombre_club ASC]]>
+	</queryString>
+	<field name="ID_CLUB" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="ID_CLUB"/>
+		<property name="com.jaspersoft.studio.field.label" value="ID_CLUB"/>
+	</field>
+	<field name="NOMBRE_CLUB" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="NOMBRE_CLUB"/>
+		<property name="com.jaspersoft.studio.field.label" value="NOMBRE_CLUB"/>
+	</field>
+	<field name="CIUDAD" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="CIUDAD"/>
+		<property name="com.jaspersoft.studio.field.label" value="CIUDAD"/>
+	</field>
+	<field name="PAIS" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="PAIS"/>
+		<property name="com.jaspersoft.studio.field.label" value="PAIS"/>
+	</field>
+	<field name="ANNO" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="ANNO"/>
+		<property name="com.jaspersoft.studio.field.label" value="ANNO"/>
+	</field>
+	<field name="TOTAL_INGRESOS_MEMBRESIA" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="TOTAL_INGRESOS_MEMBRESIA"/>
+		<property name="com.jaspersoft.studio.field.label" value="TOTAL_INGRESOS_MEMBRESIA"/>
+	</field>
+	<field name="TOTAL_RECAUDACION_OBRAS" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="TOTAL_RECAUDACION_OBRAS"/>
+		<property name="com.jaspersoft.studio.field.label" value="TOTAL_RECAUDACION_OBRAS"/>
+	</field>
+	<field name="INGRESOS_TOTALES" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="INGRESOS_TOTALES"/>
+		<property name="com.jaspersoft.studio.field.label" value="INGRESOS_TOTALES"/>
+	</field>
+	<field name="CANTIDAD_GRUPOS" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="CANTIDAD_GRUPOS"/>
+		<property name="com.jaspersoft.studio.field.label" value="CANTIDAD_GRUPOS"/>
+	</field>
+	<field name="TICKET_PROMEDIO_USD" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="TICKET_PROMEDIO_USD"/>
+		<property name="com.jaspersoft.studio.field.label" value="TICKET_PROMEDIO_USD"/>
+	</field>
+	<variable name="SUMA_GLOBAL_INGRESOS" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{INGRESOS_TOTALES}]]></variableExpression>
+	</variable>
+	<group name="PaisGroup">
+		<groupExpression><![CDATA[$F{PAIS}]]></groupExpression>
+		<groupHeader>
+			<band height="25">
+				<rectangle>
+					<reportElement mode="Opaque" x="0" y="2" width="555" height="20" backcolor="#F7C59F" uuid="2a3b37ff-90a8-4421-9d22-1fcbf8a2b53f"/>
+					<graphicElement>
+						<pen lineWidth="0.0"/>
+					</graphicElement>
+				</rectangle>
+				<textField>
+					<reportElement x="10" y="4" width="300" height="16" forecolor="#FFFFFF" uuid="6fa217a4-31bf-4b95-a430-c081e748bde2"/>
+					<textElement verticalAlignment="Middle">
+						<font fontName="Arial" size="11" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{PAIS}.toUpperCase()]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+	</group>
+	<title>
+		<band height="85" splitType="Stretch">
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="0" width="555" height="60" backcolor="#FF6B35" uuid="a3c9b77d-7881-424a-81f7-bd35d978a3c1"/>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="15" y="10" width="345" height="25" forecolor="#FFFFFF" uuid="9e1a3848-1234-4bc3-9999-e65b5cb12e3c"/>
+				<textElement>
+					<font fontName="Arial" size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[RENDIMIENTO OPERATIVO Y FINANCIERO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="15" y="33" width="345" height="15" forecolor="#E2E8F0" uuid="7a2c3d4e-5f6a-4b2c-8d1e-9f0a2b3c4d5e"/>
+				<textElement>
+					<font fontName="Arial" size="9" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Análisis de Escala, Capacidad y Recaudación Consolidada]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="380" y="12" width="160" height="38" forecolor="#FFFFFF" uuid="bc239129-9c12-4c2d-9844-31bfa11b9319"/>
+				<textElement textAlignment="Right" markup="html">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<text><![CDATA[Sistemas de Ingeniería UCAB<br/>Estatus Base: Producción]]></text>
+			</staticText>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="25" splitType="Stretch">
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="0" width="555" height="22" backcolor="#1A659E" uuid="7a3b37ff-90a8-4421-9d22-1fcbf8a2b5aa"/>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="5" y="4" width="35" height="15" forecolor="#FFFFFF" uuid="d6e53c44-e2a2-4935-b286-90f7d5c9c30f"/>
+				<textElement textAlignment="Center">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[AÑO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="45" y="4" width="135" height="15" forecolor="#FFFFFF" uuid="d1c23b44-342a-4f56-831d-85f8d5c9c30f"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CLUB DE LECTURA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="185" y="4" width="75" height="15" forecolor="#FFFFFF" uuid="d2c23b44-342a-4f56-831d-85f8d5c9c30f"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CIUDAD]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="265" y="4" width="45" height="15" forecolor="#FFFFFF" uuid="d2c53b44-342a-4f56-831d-85f8d5c9c30f"/>
+				<textElement textAlignment="Center">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[GRUPOS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="315" y="4" width="75" height="15" forecolor="#FFFFFF" uuid="d3c23b44-342a-4f56-831d-85f8d5c9c30f"/>
+				<textElement textAlignment="Right">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[MEMBRESÍAS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="395" y="4" width="75" height="15" forecolor="#FFFFFF" uuid="d4c23b44-342a-4f56-831d-85f8d5c9c30f"/>
+				<textElement textAlignment="Right">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TAQUILLA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="475" y="4" width="75" height="15" forecolor="#FFFFFF" uuid="d5c23b44-342a-4f56-831d-85f8d5c9c30f"/>
+				<textElement textAlignment="Right">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TICKET PROMEDIO]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="22" splitType="Stretch">
+			<line>
+				<reportElement x="0" y="19" width="555" height="1" forecolor="#E2E8F0" uuid="bcda8433-21c2-4bef-b7ef-b749be9d4a31"/>
+				<graphicElement>
+					<pen lineWidth="1.0"/>
+				</graphicElement>
+			</line>
+			<textField>
+				<reportElement x="5" y="2" width="35" height="15" uuid="5fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement textAlignment="Center">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ANNO}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="45" y="2" width="135" height="15" uuid="6fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NOMBRE_CLUB}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="185" y="2" width="75" height="15" uuid="7fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement>
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CIUDAD}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="265" y="2" width="45" height="15" uuid="7fa217a4-31bf-4b95-a430-c081e748bde5"/>
+				<textElement textAlignment="Center">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CANTIDAD_GRUPOS}]]></textFieldExpression>
+			</textField>
+			<textField pattern="$#,##0.00">
+				<reportElement x="315" y="2" width="75" height="15" uuid="8fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement textAlignment="Right">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TOTAL_INGRESOS_MEMBRESIA}]]></textFieldExpression>
+			</textField>
+			<textField pattern="$#,##0.00">
+				<reportElement x="395" y="2" width="75" height="15" uuid="9fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement textAlignment="Right">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TOTAL_RECAUDACION_OBRAS}]]></textFieldExpression>
+			</textField>
+			<textField pattern="$#,##0.00">
+				<reportElement x="475" y="2" width="75" height="15" forecolor="#2B6CB0" uuid="0fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement textAlignment="Right">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TICKET_PROMEDIO_USD}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<summary>
+		<band height="50" splitType="Stretch">
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="10" width="555" height="30" backcolor="#EDF2F7" uuid="1bfa82a1-12c2-44df-99ef-8716bca23211"/>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="15" y="17" width="250" height="16" forecolor="#2D3748" uuid="3d0e8841-a12b-42b7-a3a8-fa80cfbde32c"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[RECAUDACIÓN BRUTA GLOBAL (SISTEMA):]]></text>
+			</staticText>
+			<textField pattern="$#,##0.00">
+				<reportElement x="390" y="15" width="160" height="20" forecolor="#1A365D" uuid="4fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Arial" size="11" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{SUMA_GLOBAL_INGRESOS}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="0" y="10" width="555" height="1" forecolor="#1A365D" uuid="7cf38510-1c1a-4713-98fe-08bb29094fe0"/>
+				<graphicElement>
+					<pen lineWidth="1.5"/>
+				</graphicElement>
+			</line>
+		</band>
+	</summary>
+</jasperReport>
