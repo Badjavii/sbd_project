@@ -135,6 +135,8 @@ create or replace procedure sojg_sp_split_grupo(
     v_dia         varchar2(15);
     v_hora        number(4,2);
     v_activas     number;
+    v_min         number;
+    v_max         number;
 
     cursor c_miembros is
         select id_miembro, fecha_inicio_membresia, fecha_inicio
@@ -152,25 +154,55 @@ begin
         raise_application_error(-20070, 'No se puede hacer split mientras el grupo tiene una reunion activa.');
     end if;
 
-    select categoria_edad, dia_reunion, hora_inicio into v_categoria, v_dia, v_hora
-        from sojg_grupo_de_lectura
-        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo_orig);
+    -- obtener datos del grupo
+    select categoria_edad, dia_reunion, hora_inicio
+    into v_categoria, v_dia, v_hora
+    from sojg_grupo_de_lectura
+    where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo_orig);
 
+    -- definir minimo y maximo segun categoria
+    case v_categoria
+        when 'Adulto' then v_min := 10; v_max := 30;
+        when 'Joven'  then v_min := 5;  v_max := 15;
+        when 'Nino'   then v_min := 10; v_max := 15;
+    end case;
+
+    -- contar miembros activos
     select count(*) into v_total from sojg_historico_grupo_lectura
-        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo_orig) and (fecha_fin is null);
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo_orig)
+            and (fecha_fin is null);
 
+    -- validar minimo absoluto para hacer split
     if (v_total < 2) then
         raise_application_error(-20071, 'El grupo no tiene suficientes miembros para hacer split.');
     end if;
 
+    -- validar que el grupo alcanzo el maximo para poder hacer split
+    if (v_total < v_max) then
+        raise_application_error(-20072,
+            'El grupo ' || v_categoria || ' necesita ' || v_max ||
+            ' miembros para hacer split. Miembros actuales: ' || v_total || '.');
+    end if;
+
+    -- calcular mitad
     v_mitad := trunc(v_total / 2);
 
+    -- validar que ambos grupos resultantes cumplan el minimo
+    if ((v_total - v_mitad) < v_min or v_mitad < v_min) then
+        raise_application_error(-20073,
+            'El split dejaria un grupo con menos de ' || v_min ||
+            ' miembros (minimo para ' || v_categoria || ').');
+    end if;
+
+    -- calcular numero del nuevo grupo
     select nvl(max(numero_de_grupo), 0) + 1 into v_nuevo_grupo
         from sojg_grupo_de_lectura where (id_club = p_id_club);
 
+    -- crear nuevo grupo
     insert into sojg_grupo_de_lectura (id_club, numero_de_grupo, fecha_de_creacion, categoria_edad, dia_reunion, hora_inicio)
         values (p_id_club, v_nuevo_grupo, sysdate, v_categoria, v_dia, v_hora);
 
+    -- mover los miembros mas nuevos al grupo nuevo
     for r in c_miembros loop
         v_contador := v_contador + 1;
         if (v_contador > (v_total - v_mitad)) then
@@ -184,9 +216,13 @@ begin
         end if;
     end loop;
 
+    dbms_output.put_line('Split ejecutado exitosamente.');
+    dbms_output.put_line('Grupo original ' || p_numero_grupo_orig || ': ' || (v_total - v_mitad) || ' miembros.');
+    dbms_output.put_line('Grupo nuevo ' || v_nuevo_grupo || ': ' || v_mitad || ' miembros.');
+
     commit;
 exception
-    when no_data_found then raise_application_error(-20072, 'El grupo especificado no existe.');
+    when no_data_found then raise_application_error(-20074, 'El grupo especificado no existe.');
     when others then rollback; raise;
 end sojg_sp_split_grupo;
 /
