@@ -379,53 +379,48 @@ create or replace procedure sojg_sp_generar_calendario(
     p_numero_grupo in number,
     p_isbn_libro   in number,
     p_id_moderador in number,
-    p_mes          in number,
-    p_anno         in number
+    p_fecha        in date
 ) is
-    v_fecha_inicio date;
-    v_fecha_fin    date;
-    v_fecha_actual date;
-    v_reuniones    number := 0;
-    v_categoria    varchar2(10);
-    v_count        number;
+    v_count number;
 begin
-    select categoria_edad into v_categoria
-        from sojg_grupo_de_lectura
-        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo);
-
+    -- validar que no haya discusion activa con otro libro
     select count(*) into v_count from sojg_calendario_mes
         where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
-            and (realizada = 'NO') and (ultima_discusion = 'NO');
+            and (isbn_libro != p_isbn_libro) and (realizada = 'NO');
     if (v_count > 0) then
-        raise_application_error(-20080, 'El grupo tiene una discusion activa. No se puede generar nuevo calendario.');
+        raise_application_error(-20080, 'El grupo tiene una discusion activa con otro libro.');
     end if;
 
-    select count(*) into v_count from sojg_libro where (isbn = p_isbn_libro);
-    if (v_count = 0) then
-        raise_application_error(-20081, 'El libro especificado no existe.');
+    -- validar que si ya hay reuniones del mismo libro
+    -- tienen el mismo moderador
+    select count(*) into v_count from sojg_calendario_mes
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+            and (isbn_libro = p_isbn_libro) and (id_moderador != p_id_moderador);
+    if (v_count > 0) then
+        raise_application_error(-20081, 'El moderador debe ser el mismo para todas las reuniones del libro.');
     end if;
 
-    v_fecha_inicio := to_date('01/' || to_char(p_mes, 'FM00') || '/' || to_char(p_anno), 'DD/MM/YYYY');
-    v_fecha_fin    := last_day(v_fecha_inicio);
-    v_fecha_actual := v_fecha_inicio;
-
-    while (v_fecha_actual <= v_fecha_fin and v_reuniones < 3) loop
-        if (to_char(v_fecha_actual, 'D') not in ('1', '7')) then
-            v_reuniones := v_reuniones + 1;
-            insert into sojg_calendario_mes (id_club, numero_de_grupo, isbn_libro, fecha_reunion, realizada, ultima_discusion, id_moderador)
-                values (p_id_club, p_numero_grupo, p_isbn_libro, v_fecha_actual, 'NO',
-                    case when v_reuniones = 3 then 'SI' else 'NO' end, p_id_moderador);
-        end if;
-        v_fecha_actual := v_fecha_actual + 1;
-    end loop;
-
-    if (v_reuniones < 3) then
-        raise_application_error(-20082, 'El mes no tiene suficientes dias habiles para 3 reuniones.');
+    -- validar que no exista ya una reunion en esa fecha para ese grupo
+    select count(*) into v_count from sojg_calendario_mes
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+            and (fecha_reunion = p_fecha);
+    if (v_count > 0) then
+        raise_application_error(-20082, 'Ya existe una reunion programada para esa fecha en este grupo.');
     end if;
+
+    -- validar que no haya mas de 3 reuniones ya planificadas para este libro
+    select count(*) into v_count from sojg_calendario_mes
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+            and (isbn_libro = p_isbn_libro);
+    if (v_count >= 3) then
+        raise_application_error(-20083, 'Ya se han planificado 3 reuniones para este libro. Use cerrar discusion.');
+    end if;
+
+    insert into sojg_calendario_mes (id_club, numero_de_grupo, isbn_libro, fecha_reunion, realizada, ultima_discusion, id_moderador)
+        values (p_id_club, p_numero_grupo, p_isbn_libro, p_fecha, 'NO', 'NO', p_id_moderador);
 
     commit;
 exception
-    when no_data_found then raise_application_error(-20083, 'El club o grupo especificado no existe.');
     when others then rollback; raise;
 end sojg_sp_generar_calendario;
 /
@@ -494,8 +489,10 @@ create or replace procedure sojg_sp_realizar_reunion(
     p_isbn_libro   in number,
     p_fecha        in date
 ) is
-    v_count number;
+    v_count          number;
+    v_ya_realizadas  number;
 begin
+    -- validar que la reunion existe
     select count(*) into v_count from sojg_calendario_mes
         where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
             and (isbn_libro = p_isbn_libro) and (fecha_reunion = p_fecha);
@@ -503,9 +500,23 @@ begin
         raise_application_error(-20095, 'La reunion especificada no existe en el calendario.');
     end if;
 
-    update sojg_calendario_mes set realizada = 'SI'
+    -- contar cuantas reuniones ya estan realizadas para este libro/grupo
+    select count(*) into v_ya_realizadas from sojg_calendario_mes
         where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
-            and (isbn_libro = p_isbn_libro) and (fecha_reunion = p_fecha);
+            and (isbn_libro = p_isbn_libro) and (realizada = 'SI');
+
+    -- si esta es la tercera marcarla como ultima tambien
+    if (v_ya_realizadas >= 2) then
+        update sojg_calendario_mes
+            set realizada = 'SI', ultima_discusion = 'SI'
+            where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+                and (isbn_libro = p_isbn_libro) and (fecha_reunion = p_fecha);
+    else
+        update sojg_calendario_mes
+            set realizada = 'SI'
+            where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+                and (isbn_libro = p_isbn_libro) and (fecha_reunion = p_fecha);
+    end if;
 
     commit;
 exception
@@ -583,28 +594,40 @@ create or replace procedure sojg_sp_cerrar_discusion(
     p_conclusiones in varchar2,
     p_valoracion   in number
 ) is
-    v_count number;
+    v_count        number;
+    v_fecha_ultima date;
 begin
+    -- validar valoracion
     if (p_valoracion < 1 or p_valoracion > 5) then
         raise_application_error(-20110, 'La valoracion debe estar entre 1 y 5.');
     end if;
 
-    -- validar que exista la reunion final marcada como ultima discusion
+    -- validar que haya al menos una reunion realizada
+    select count(*) into v_count from sojg_calendario_mes
+        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+            and (isbn_libro = p_isbn_libro) and (realizada = 'SI');
+    if (v_count = 0) then
+        raise_application_error(-20111, 'No hay reuniones realizadas para cerrar la discusion.');
+    end if;
+
+    -- verificar si ya hay una marcada como ultima
     select count(*) into v_count from sojg_calendario_mes
         where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
             and (isbn_libro = p_isbn_libro) and (ultima_discusion = 'SI');
+
+    -- si no hay ultima marcada, tomar la mas reciente realizada y marcarla
     if (v_count = 0) then
-        raise_application_error(-20111, 'No se encontro la reunion final para este libro en el grupo.');
+        select max(fecha_reunion) into v_fecha_ultima from sojg_calendario_mes
+            where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+                and (isbn_libro = p_isbn_libro) and (realizada = 'SI');
+
+        update sojg_calendario_mes
+            set ultima_discusion = 'SI'
+            where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
+                and (isbn_libro = p_isbn_libro) and (fecha_reunion = v_fecha_ultima);
     end if;
 
-    -- validar que la reunion final haya sido realizada
-    select count(*) into v_count from sojg_calendario_mes
-        where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
-            and (isbn_libro = p_isbn_libro) and (ultima_discusion = 'SI') and (realizada = 'SI');
-    if (v_count = 0) then
-        raise_application_error(-20112, 'La reunion final aun no ha sido realizada. Use sp_realizar_reunion primero.');
-    end if;
-
+    -- cerrar con conclusiones y valoracion
     update sojg_calendario_mes
         set conclusiones = p_conclusiones, valoracion_final = p_valoracion
         where (id_club = p_id_club) and (numero_de_grupo = p_numero_grupo)
