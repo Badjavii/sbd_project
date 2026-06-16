@@ -290,4 +290,24 @@ end;
 prompt ==========================================
 prompt   Presione Enter para continuar...
 prompt ==========================================
+undefine v_nombre
+undefine v_segundo_nombre  
+undefine v_apellido
+undefine v_segundo_ap
+undefine v_fecha
+undefine v_idiomas
+undefine v_correo
+undefine v_doc
+undefine v_tipo_rep
+undefine v_id_rep_lector
+undefine v_id_rep_ext
+undefine v_autorizacion
+undefine v_isbn1
+undefine v_isbn2
+undefine v_isbn3
+undefine v_id_club
+undefine v_fing
+undefine es_menor
+undefine es_muy_nino
+undefine v_edad_calc
 pause
