@@ -29,9 +29,9 @@ accept v_doc            char   prompt 'Documento de identidad: '
 
 -- calcular edad y si es menor
 set termout off
-column v_edad_calc  new_value v_edad_calc  noprint
-column es_menor     new_value es_menor     noprint
-column es_muy_nino  new_value es_muy_nino  noprint
+column v_edad_calc new_value v_edad_calc noprint
+column es_menor    new_value es_menor    noprint
+column es_muy_nino new_value es_muy_nino noprint
 select
     trunc(months_between(sysdate, to_date('&v_fecha', 'DD/MM/YYYY')) / 12) as v_edad_calc,
     case when months_between(sysdate, to_date('&v_fecha', 'DD/MM/YYYY')) / 12 < 6
@@ -53,42 +53,26 @@ begin
 end;
 /
 
--- preview representantes (solo si es menor)
--- representantes externos
-begin
-    if ('&es_menor' = 'SI') then
-        dbms_output.put_line('');
-        dbms_output.put_line('==========================================');
-        dbms_output.put_line('  Representantes externos disponibles:');
-        dbms_output.put_line('==========================================');
-    end if;
-end;
-/
-
+-- preview representante externo si es menor
 set termout off
-column show_rep new_value show_rep noprint
-select case when '&es_menor' = 'SI' then 'clubes_op2_rep_externo.sql' else 'noop.sql' end as show_rep from dual;
+column show_ext new_value show_ext noprint
+select case when '&es_menor' = 'SI'
+    then '&base_path/clubes/clubes_op2_rep_externo.sql'
+    else '&base_path/noop.sql'
+end as show_ext from dual;
 set termout on
-@&base_path/clubes/&show_rep
+@&show_ext
 
--- representantes lectores adultos
-begin
-    if ('&es_menor' = 'SI') then
-        dbms_output.put_line('');
-        dbms_output.put_line('==========================================');
-        dbms_output.put_line('  Lectores adultos disponibles como representante:');
-        dbms_output.put_line('==========================================');
-    end if;
-end;
-/
-
+-- preview representante lector si es menor
 set termout off
 column show_lect new_value show_lect noprint
-select case when '&es_menor' = 'SI' then 'clubes_op2_rep_lector.sql' else 'noop.sql' end as show_lect from dual;
+select case when '&es_menor' = 'SI'
+    then '&base_path/clubes/clubes_op2_rep_lector.sql'
+    else '&base_path/noop.sql'
+end as show_lect from dual;
 set termout on
-@&base_path/clubes/&show_lect
+@&show_lect
 
--- pedir tipo de representante
 accept v_tipo_rep      char   prompt 'Tipo representante (LECTOR/EXTERNO/NA): '
 accept v_id_rep_lector number prompt 'ID Representante lector (0 si no aplica): '
 accept v_id_rep_ext    number prompt 'ID Representante externo (0 si no aplica): '
