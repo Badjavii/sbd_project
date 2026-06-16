@@ -64,4 +64,13 @@ begin
 exception
     when others then dbms_output.put_line('Error: ' || sqlerrm);
 end;
+
+-- paso 5: re-actualizar morosos luego del pago
+-- por si el pago recien registrado saldo la deuda
+begin
+    sojg_sp_actualizar_morosos(&v_id_club);
+    dbms_output.put_line('Estado de membresías actualizado.');
+exception
+    when others then dbms_output.put_line('Error actualizando morosos: ' || sqlerrm);
+end;
 /
