@@ -442,16 +442,21 @@ begin
     end if;
 
     -- marcar como morosos a quienes deben pagos
-    -- antiguedad en años > cantidad de pagos registrados = debe
+    -- logica: por cada año desde que entro al club debe haber un pago
+    -- se verifica contando cuantos años DISTINTOS tiene pagos registrados
+    -- vs cuantos años han pasado desde que entro
     update sojg_historico_membresia hm
     set estatus = 'Morosa'
     where (hm.id_club = p_id_club)
         and (hm.estatus = 'Activa')
         and (hm.fecha_fin is null)
         and (
+            -- anos transcurridos desde que entro
             trunc(months_between(sysdate, hm.fecha_inicio_membresia) / 12)
             >
-            (select count(*) from sojg_pago_membresia pm
+            -- anos distintos en que ha pagado
+            (select count(distinct extract(year from pm.fecha))
+             from sojg_pago_membresia pm
              where (pm.id_miembro = hm.id_miembro)
                  and (pm.id_club = p_id_club))
         );
