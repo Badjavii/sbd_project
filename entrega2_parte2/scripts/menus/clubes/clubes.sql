@@ -19,7 +19,7 @@ prompt   5. Expulsar miembro
 prompt   6. Registrar pago de membresia
 prompt   7. Asociar clubes
 prompt   8. Split de grupo
-prompt   9. Gestionar pago de membresia
+prompt   9. Registrar nuevo grupo de lectura
 prompt  10. Validar expulsiones por inasistencia
 prompt   0. Volver al menu principal
 prompt ==========================================
