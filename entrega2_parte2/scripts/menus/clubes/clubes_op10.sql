@@ -1,33 +1,83 @@
--- preview
+-- ==========================================
+-- ARCHIVO: menu/clubes/clubes_op11.sql
+-- ==========================================
+
+-- mostrar clubes disponibles
 prompt ==========================================
 prompt   Clubes disponibles:
 prompt ==========================================
 col id_club format 999
 col nombre  format a40
-select id_club, nombre, idioma_del_club from sojg_club order by id_club;
+select id_club, nombre from sojg_club order by id_club;
 prompt ==========================================
-prompt   Grupos existentes por club:
+accept v_id_club number prompt 'ID Club a revisar: '
+
+-- mostrar asistencia de miembros activos
 prompt ==========================================
-col numero_de_grupo format 999
-col categoria_edad  format a10
-col dia_reunion     format a12
-select id_club, numero_de_grupo, categoria_edad, dia_reunion, hora_inicio
-from sojg_grupo_de_lectura
-order by id_club, numero_de_grupo;
+prompt   Asistencia de miembros activos:
+prompt ==========================================
+col id_miembro    format 999
+col nombre        format a30
+col reuniones     format 999
+col inasistencias format 999
+col pct_faltas    format 999.99
+select
+    l.id_miembro,
+    l.nombre || ' ' || l.apellido as nombre,
+    (select count(*)
+     from sojg_calendario_mes cm
+     join sojg_historico_grupo_lectura hg
+         on (cm.id_club = hg.id_club) and (cm.numero_de_grupo = hg.numero_de_grupo)
+     where (hg.id_miembro = l.id_miembro) and (hg.id_club = &v_id_club)
+         and (hg.fecha_fin is null) and (cm.realizada = 'SI')
+         and (cm.fecha_reunion >= hg.fecha_inicio)) as reuniones,
+    (select count(*)
+     from sojg_inasistencia i
+     join sojg_historico_grupo_lectura hg
+         on (i.id_club = hg.id_club) and (i.numero_de_grupo = hg.numero_de_grupo)
+     where (i.id_miembro = l.id_miembro) and (hg.id_club = &v_id_club)
+         and (hg.fecha_fin is null) and (i.fecha_reunion >= hg.fecha_inicio)) as inasistencias,
+    round(
+        (select count(*)
+         from sojg_inasistencia i
+         join sojg_historico_grupo_lectura hg
+             on (i.id_club = hg.id_club) and (i.numero_de_grupo = hg.numero_de_grupo)
+         where (i.id_miembro = l.id_miembro) and (hg.id_club = &v_id_club)
+             and (hg.fecha_fin is null) and (i.fecha_reunion >= hg.fecha_inicio))
+        /
+        nullif(
+            (select count(*)
+             from sojg_calendario_mes cm
+             join sojg_historico_grupo_lectura hg
+                 on (cm.id_club = hg.id_club) and (cm.numero_de_grupo = hg.numero_de_grupo)
+             where (hg.id_miembro = l.id_miembro) and (hg.id_club = &v_id_club)
+                 and (hg.fecha_fin is null) and (cm.realizada = 'SI')
+                 and (cm.fecha_reunion >= hg.fecha_inicio)), 0)
+        * 100, 2
+    ) as pct_faltas
+from sojg_lector l
+join sojg_historico_membresia hm on (l.id_miembro = hm.id_miembro)
+where (hm.id_club = &v_id_club) and (hm.estatus = 'Activa')
+order by pct_faltas desc nulls last;
+prompt ==========================================
+prompt   Aplicando validaciones de expulsion...
 prompt ==========================================
 
-accept v_id_club   number prompt 'ID Club: '
-accept v_categoria char   prompt 'Categoria (Adulto/Joven/Nino): '
-accept v_dia       char   prompt 'Dia de reunion (Lunes/Martes/Miercoles/Jueves/Viernes): '
-accept v_hora      number prompt 'Hora inicio (17-19): '
-
+declare
+    cursor c_miembros is
+        select distinct hg.id_miembro
+        from sojg_historico_grupo_lectura hg
+        join sojg_historico_membresia hm
+            on (hg.id_miembro = hm.id_miembro)
+            and (hg.id_club = hm.id_club)
+        where (hg.id_club = &v_id_club)
+            and (hg.fecha_fin is null)
+            and (hm.estatus = 'Activa');
 begin
-    sojg_sp_registrar_grupo(
-        p_id_club     => &v_id_club,
-        p_categoria   => '&v_categoria',
-        p_dia_reunion => '&v_dia',
-        p_hora_inicio => &v_hora
-    );
+    for r in c_miembros loop
+        sojg_sp_validar_expulsiones(&v_id_club, r.id_miembro);
+    end loop;
+    dbms_output.put_line('Validacion completada.');
 exception
     when others then dbms_output.put_line('Error: ' || sqlerrm);
 end;
