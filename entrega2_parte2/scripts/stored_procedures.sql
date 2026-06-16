@@ -292,26 +292,38 @@ create or replace procedure sojg_sp_inscribir_miembro(
     p_id_club    in number,
     p_fecha      in date
 ) is
-    v_count number;
-    v_cuota char(2);
+    v_count        number;
+    v_cuota        char(2);
+    v_edad_miembro number;
 begin
+    -- validar edad minima de 6 anos
+    v_edad_miembro := sojg_edad_miembro(p_id_miembro);
+    if (v_edad_miembro < 6) then
+        raise_application_error(-20043,
+            'El miembro tiene menos de 6 anos. No puede inscribirse en ningun club.');
+    end if;
+
+    -- validar que no este activo en otro club
     select count(*) into v_count from sojg_historico_membresia
         where (id_miembro = p_id_miembro) and (estatus = 'Activa');
     if (v_count > 0) then
         raise_application_error(-20040, 'El miembro ya se encuentra activo en un club.');
     end if;
 
+    -- validar que no tenga deudas pendientes
     select count(*) into v_count from sojg_historico_membresia
         where (id_miembro = p_id_miembro) and (estatus = 'Morosa');
     if (v_count > 0) then
         raise_application_error(-20041, 'El miembro tiene deudas pendientes. No puede inscribirse.');
     end if;
 
+    -- validar que el club exista
     select count(*) into v_count from sojg_club where (id_club = p_id_club);
     if (v_count = 0) then
         raise_application_error(-20042, 'El club especificado no existe.');
     end if;
 
+    -- insertar membresia
     insert into sojg_historico_membresia (id_miembro, id_club, fecha_inicio_membresia, fecha_fin, estatus, motivo_retiro)
         values (p_id_miembro, p_id_club, p_fecha, null, 'Activa', null);
 
