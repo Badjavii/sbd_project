@@ -5,7 +5,8 @@ set serveroutput on
 set verify off
 set feedback off
 set echo off
- 
+
+undefine v_opcion
 clear screen
 prompt ==========================================
 prompt       1. ADMINISTRACION DE CLUBES
