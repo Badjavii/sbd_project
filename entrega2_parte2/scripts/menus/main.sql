@@ -1,7 +1,7 @@
 -- ==========================================
 -- ARCHIVO: menu/main.sql
 -- ==========================================
-define base_path = '/home/badjavii/Repositories/sbd_project/entrega2_parte2/scripts/menus'
+define base_path = 'C:\Users\onasi\OneDrive\Desktop\proyectoBD\sbd_project\entrega2_parte2\scripts\menus'
 
 set serveroutput on
 set verify off

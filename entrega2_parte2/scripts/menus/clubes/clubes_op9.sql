@@ -74,3 +74,7 @@ exception
     when others then dbms_output.put_line('Error actualizando morosos: ' || sqlerrm);
 end;
 /
+
+prompt ==========================================
+prompt   Presione Enter para continuar...
+pause
