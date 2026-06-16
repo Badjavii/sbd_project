@@ -99,11 +99,11 @@ begin
         '&v_correo',
         '&v_doc',
         case when '&es_menor' = 'SI' and '&v_autorizacion' != 'NA'
-            then '&v_autorizacion' else null end,
+            then cast('&v_autorizacion' as char(2)) else null end,
         case when '&v_tipo_rep' = 'EXTERNO'
-            then nullif(&v_id_rep_ext, 0) else null end,
+            then nullif(cast(&v_id_rep_ext as number), 0) else null end,
         case when '&v_tipo_rep' = 'LECTOR'
-            then nullif(&v_id_rep_lector, 0) else null end
+            then nullif(cast(&v_id_rep_lector as number), 0) else null end
     );
 
     insert into sojg_preferencia_lectura (id_miembro, isbn_libro, orden_preferencia)
