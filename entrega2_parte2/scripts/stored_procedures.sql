@@ -238,13 +238,20 @@ create or replace procedure sojg_sp_asignar_grupo(
     v_categoria varchar2(10);
     v_grupo     number;
     v_count     number;
+    v_max       number;
 begin
     v_edad := sojg_edad_miembro(p_id_miembro);
-
     if (v_edad > 25) then v_categoria := 'Adulto';
     elsif (v_edad >= 13) then v_categoria := 'Joven';
     else v_categoria := 'Nino';
     end if;
+
+    -- maximo segun categoria
+    v_max := case v_categoria
+        when 'Adulto' then 30
+        when 'Joven'  then 15
+        when 'Nino'   then 15
+    end;
 
     select numero_de_grupo into v_grupo
     from sojg_grupo_de_lectura gl
@@ -267,9 +274,10 @@ begin
     select count(*) into v_count from sojg_historico_grupo_lectura
         where (id_club = p_id_club) and (numero_de_grupo = v_grupo) and (fecha_fin is null);
 
-    if (v_count >= 4) then
+    if (v_count >= v_max) then
         sojg_sp_split_grupo(p_id_club, v_grupo);
     end if;
+
 exception
     when no_data_found then
         raise_application_error(-20030, 'No hay grupos disponibles de la categoria correcta o todos tienen reunion activa.');
