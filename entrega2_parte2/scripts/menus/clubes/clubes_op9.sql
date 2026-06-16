@@ -1,77 +1,35 @@
--- ==========================================
--- ARCHIVO: menu/clubes/clubes_op9.sql
--- ==========================================
-
--- paso 1: mostrar clubes independientes disponibles
+-- preview
 prompt ==========================================
-prompt   Clubes independientes (cobran cuota):
+prompt   Clubes disponibles:
 prompt ==========================================
 col id_club format 999
 col nombre  format a40
-select id_club, nombre from sojg_club
-where (cuota_membresia = 'SI')
-order by id_club;
+select id_club, nombre, idioma_del_club from sojg_club order by id_club;
 prompt ==========================================
-accept v_id_club number prompt 'ID Club: '
-
--- paso 2: actualizar morosos antes de mostrar
-begin
-    sojg_sp_actualizar_morosos(&v_id_club);
-exception
-    when others then dbms_output.put_line('Error actualizando morosos: ' || sqlerrm);
-end;
-/
-
--- paso 3: mostrar miembros morosos del club
+prompt   Grupos existentes por club:
 prompt ==========================================
-prompt   Miembros con deudas pendientes:
-prompt ==========================================
-col id_miembro format 999
-col nombre     format a35
-col antiguedad format 99.99
-col pagos      format 999
-select
-    l.id_miembro,
-    l.nombre || ' ' || l.apellido as nombre,
-    trunc(months_between(sysdate, hm.fecha_inicio_membresia) / 12, 2) as antiguedad,
-    (select count(*) from sojg_pago_membresia pm
-     where pm.id_miembro = l.id_miembro and pm.id_club = &v_id_club) as pagos,
-    trunc(months_between(sysdate, hm.fecha_inicio_membresia) / 12) -
-    (select count(*) from sojg_pago_membresia pm
-     where pm.id_miembro = l.id_miembro and pm.id_club = &v_id_club) as pagos_pendientes
-from sojg_lector l
-join sojg_historico_membresia hm
-    on (l.id_miembro = hm.id_miembro)
-where (hm.id_club = &v_id_club)
-    and (hm.estatus = 'Morosa')
-    and (hm.fecha_fin is null)
-order by pagos_pendientes desc;
+col numero_de_grupo format 999
+col categoria_edad  format a10
+col dia_reunion     format a12
+select id_club, numero_de_grupo, categoria_edad, dia_reunion, hora_inicio
+from sojg_grupo_de_lectura
+order by id_club, numero_de_grupo;
 prompt ==========================================
 
--- paso 4: registrar el pago
-accept v_id_miembro number prompt 'ID Miembro a pagar: '
-accept v_monto      number prompt 'Monto: '
-accept v_fecha      char   prompt 'Fecha pago (DD/MM/YYYY): '
+accept v_id_club   number prompt 'ID Club: '
+accept v_categoria char   prompt 'Categoria (Adulto/Joven/Nino): '
+accept v_dia       char   prompt 'Dia de reunion (Lunes/Martes/Miercoles/Jueves/Viernes): '
+accept v_hora      number prompt 'Hora inicio (17-19): '
 
 begin
-    sojg_sp_registrar_pago(
-        p_id_miembro => &v_id_miembro,
-        p_id_club    => &v_id_club,
-        p_monto      => &v_monto,
-        p_fecha      => to_date('&v_fecha', 'DD/MM/YYYY')
+    sojg_sp_registrar_grupo(
+        p_id_club     => &v_id_club,
+        p_categoria   => '&v_categoria',
+        p_dia_reunion => '&v_dia',
+        p_hora_inicio => &v_hora
     );
-    dbms_output.put_line('Pago registrado exitosamente.');
 exception
     when others then dbms_output.put_line('Error: ' || sqlerrm);
-end;
-
--- paso 5: re-actualizar morosos luego del pago
--- por si el pago recien registrado saldo la deuda
-begin
-    sojg_sp_actualizar_morosos(&v_id_club);
-    dbms_output.put_line('Estado de membresías actualizado.');
-exception
-    when others then dbms_output.put_line('Error actualizando morosos: ' || sqlerrm);
 end;
 /
 
