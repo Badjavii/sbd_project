@@ -1,25 +1,91 @@
-<!-- Created with Jaspersoft Studio version 7.0.6.final using JasperReports Library version 7.0.6-5d2a603fdc6b3db8f842a83383e594f41891534d  -->
-<jasperReport name="SOJG_Ficha_Club_Personalizada" language="java" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="bc2da84a-71a2-4aef-bbdf-b749be9d4a41">
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 9.0.3.final using JasperReports Library version 6.21.6-ef58807af469abb082e2f734b1e78a3c47daad18  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="SOJG_Ficha_Club_Personalizada" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="bc2da84a-71a2-4aef-bbdf-b749be9d4a41">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="Oracle_Docker_Lucia"/>
 	<parameter name="ID_CLUB_PARAM" class="java.math.BigDecimal">
-		<description><![CDATA[Ingrese el ID del Club de Lectura que desea consultar]]></description>
+		<parameterDescription><![CDATA[Ingrese el ID del Club de Lectura que desea consultar]]></parameterDescription>
 	</parameter>
-	<query language="sql"><![CDATA[SELECT 
-            id_club,
-            nombre_club,
-            direccion,
-            codigo_postal,
-            idioma_del_club,
-            ciudad,
-            pais,
-            tipo_club,
-            NVL(institucion, 'Ninguna (Asociación Libre)') AS institucion,
-            tipo_grupo,
-            miembros_activos,
-            NVL(libro_analizado, 'Sin registro de lectura') AS libro_analizado,
-            NVL(TO_CHAR(valoracion), 'S/V') AS valoracion
-        FROM sojg_v_reporte_ficha_club
-        WHERE id_club = $P{ID_CLUB_PARAM}]]></query>
+	<queryString>
+		<![CDATA[WITH 
+historial_miembros AS (
+    SELECT 
+        id_club,
+        EXTRACT(YEAR FROM fecha_inicio_membresia) AS list_anno,
+        COUNT(DISTINCT id_miembro) AS total_m_anno
+    FROM sojg_historico_membresia
+    WHERE id_club = $P{ID_CLUB_PARAM}
+    GROUP BY id_club, EXTRACT(YEAR FROM fecha_inicio_membresia)
+),
+crecimiento_m AS (
+    SELECT 
+        id_club,
+        list_anno,
+        total_m_anno,
+        LAG(total_m_anno, 1) OVER (PARTITION BY id_club ORDER BY list_anno) AS total_m_ant,
+        ROUND(CASE 
+            WHEN LAG(total_m_anno, 1) OVER (PARTITION BY id_club ORDER BY list_anno) IS NOT NULL 
+            THEN ((total_m_anno - LAG(total_m_anno, 1) OVER (PARTITION BY id_club ORDER BY list_anno)) / LAG(total_m_anno, 1) OVER (PARTITION BY id_club ORDER BY list_anno)) * 100
+            ELSE 0 
+        END, 2) AS pct_crec_miembros
+    FROM historial_miembros
+),
+historial_financiero AS (
+    SELECT 
+        id_club,
+        anno,
+        (total_ingresos_membresia + total_recaudacion_obras) AS ingresos_totales
+    FROM vw_reporte_financiero
+    WHERE id_club = $P{ID_CLUB_PARAM}
+),
+crecimiento_f AS (
+    SELECT 
+        id_club,
+        anno,
+        ingresos_totales,
+        LAG(ingresos_totales, 1) OVER (PARTITION BY id_club ORDER BY anno) AS ingresos_ant,
+        ROUND(CASE 
+            WHEN LAG(ingresos_totales, 1) OVER (PARTITION BY id_club ORDER BY anno) > 0 
+            THEN ((ingresos_totales - LAG(ingresos_totales, 1) OVER (PARTITION BY id_club ORDER BY anno)) / LAG(ingresos_totales, 1) OVER (PARTITION BY id_club ORDER BY anno)) * 100
+            ELSE 0 
+        END, 2) AS pct_crec_economico
+    FROM historial_financiero
+)
+SELECT
+    c.id_club,
+    c.nombre AS nombre_club,
+    c.direccion,
+    c.codigo_postal,
+    c.idioma_del_club,
+    ci.nombre AS ciudad,
+    p.nombre AS pais,
+    CASE WHEN c.cuota_membresia = 'SI' THEN 'INDEPENDIENTE' ELSE 'DEPENDIENTE' END AS tipo_club,
+    NVL(i.nombre, 'Ninguna (Asociación Libre)') AS institucion,
+    gl.categoria_edad AS tipo_grupo,
+    gl.numero_de_grupo AS nro_grupo,
+    
+    -- Conteos blindados con UPPER y LIKE para evitar fallas de codificación/tildes en la letra 'Ñ'
+    (SELECT COUNT(DISTINCT g1.numero_de_grupo) FROM sojg_grupo_de_lectura g1 WHERE g1.id_club = c.id_club AND UPPER(g1.categoria_edad) LIKE 'ADUL%') AS cant_grupos_adulto,
+    (SELECT COUNT(DISTINCT g2.numero_de_grupo) FROM sojg_grupo_de_lectura g2 WHERE g2.id_club = c.id_club AND UPPER(g2.categoria_edad) LIKE 'JOVE%') AS cant_grupos_joven,
+    (SELECT COUNT(DISTINCT g3.numero_de_grupo) FROM sojg_grupo_de_lectura g3 WHERE g3.id_club = c.id_club AND (UPPER(g3.categoria_edad) LIKE 'NI%' OR UPPER(g3.categoria_edad) LIKE 'NIN%')) AS cant_grupos_nino,
+    
+    l_member.nombre || ' ' || l_member.apellido AS miembro_nombre,
+    NVL(li.titulo, 'Sin registro de lectura') AS libro_analizado,
+    NVL(TO_CHAR(cm.valoracion_final), 'S/V') AS valoracion,
+    
+    NVL((SELECT MAX(pct_crec_miembros) FROM crecimiento_m WHERE id_club = c.id_club AND list_anno = (SELECT MAX(list_anno) FROM crecimiento_m WHERE id_club = c.id_club)), 0) AS crec_miembros_pct,
+    NVL((SELECT MAX(pct_crec_economico) FROM crecimiento_f WHERE id_club = c.id_club AND anno = (SELECT MAX(anno) FROM crecimiento_f WHERE id_club = c.id_club)), 0) AS crec_economico_pct
+FROM sojg_club c
+JOIN sojg_ciudad ci ON (c.id_ciudad = ci.id)
+JOIN sojg_pais p ON (ci.id_pais = p.id)
+LEFT JOIN sojg_institucion i ON (c.id_institucion = i.id)
+JOIN sojg_grupo_de_lectura gl ON (c.id_club = gl.id_club)
+LEFT JOIN sojg_historico_grupo_lectura hg ON (gl.id_club = hg.id_club AND gl.numero_de_grupo = hg.numero_de_grupo AND hg.fecha_fin IS NULL)
+LEFT JOIN sojg_lector l_member ON (hg.id_miembro = l_member.id_miembro)
+LEFT JOIN sojg_calendario_mes cm ON (gl.id_club = cm.id_club AND gl.numero_de_grupo = cm.numero_de_grupo AND cm.realizada = 'SI')
+LEFT JOIN sojg_libro li ON (cm.isbn_libro = li.isbn)
+WHERE c.id_club = $P{ID_CLUB_PARAM}
+ORDER BY gl.categoria_edad ASC, gl.numero_de_grupo ASC, l_member.apellido ASC, cm.valoracion_final DESC NULLS LAST]]>
+	</queryString>
 	<field name="ID_CLUB" class="java.math.BigDecimal"/>
 	<field name="NOMBRE_CLUB" class="java.lang.String"/>
 	<field name="DIRECCION" class="java.lang.String"/>
@@ -30,102 +96,312 @@
 	<field name="TIPO_CLUB" class="java.lang.String"/>
 	<field name="INSTITUCION" class="java.lang.String"/>
 	<field name="TIPO_GRUPO" class="java.lang.String"/>
-	<field name="MIEMBROS_ACTIVOS" class="java.math.BigDecimal"/>
+	<field name="NRO_GRUPO" class="java.math.BigDecimal"/>
+	<field name="CANT_GRUPOS_ADULTO" class="java.math.BigDecimal"/>
+	<field name="CANT_GRUPOS_JOVEN" class="java.math.BigDecimal"/>
+	<field name="CANT_GRUPOS_NINO" class="java.math.BigDecimal"/>
+	<field name="MIEMBRO_NOMBRE" class="java.lang.String"/>
 	<field name="LIBRO_ANALIZADO" class="java.lang.String"/>
 	<field name="VALORACION" class="java.lang.String"/>
-	<background splitType="Stretch"/>
-	<title height="50" splitType="Stretch">
-		<element kind="staticText" uuid="9e1a3848-1234-4bc3-9999-e65b5cb12e3c" x="0" y="5" width="345" height="20" forecolor="#1A659E" fontName="Arial" fontSize="14.0" bold="true">
-			<text><![CDATA[SISTEMA DE CLUBES DE LECTURA · UCAB]]></text>
-		</element>
-		<element kind="line" uuid="7bf38510-1c1a-4713-98fe-08bb29094fe0" x="0" y="32" width="555" height="1" forecolor="#FF6B35">
-			<pen lineWidth="2.0"/>
-		</element>
-		<element kind="textField" uuid="4fa217a4-31bf-4b95-a430-c081e748bde2" x="440" y="8" width="115" height="15" forecolor="#718096" fontName="Arial" fontSize="9.0" pattern="dd/MM/yyyy" bold="true" hTextAlign="Right">
-			<expression><![CDATA[new java.util.Date()]]></expression>
-		</element>
+	<field name="CREC_MIEMBROS_PCT" class="java.math.BigDecimal"/>
+	<field name="CREC_ECONOMICO_PCT" class="java.math.BigDecimal"/>
+	<group name="GrupoLecturaUnico">
+		<groupExpression><![CDATA[$F{NRO_GRUPO}.toString() + "_" + $F{MIEMBRO_NOMBRE} + "_" + $F{LIBRO_ANALIZADO}]]></groupExpression>
+		<groupHeader>
+			<band height="20">
+				<textField>
+					<reportElement x="5" y="2" width="105" height="15" uuid="3fa217a4-31bf-4b95-a430-c081e748bde2"/>
+					<textElement>
+						<font fontName="Arial" size="9" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{TIPO_GRUPO} + " (#" + $F{NRO_GRUPO} + ")"]]></textFieldExpression>
+				</textField>
+				<textField textAdjust="StretchHeight">
+					<reportElement x="115" y="2" width="155" height="15" uuid="4fa217a4-31bf-4b95-a430-c081e748bde5"/>
+					<textElement>
+						<font fontName="Arial" size="9"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{MIEMBRO_NOMBRE} != null ? $F{MIEMBRO_NOMBRE} : "Sin miembros asignados"]]></textFieldExpression>
+				</textField>
+				<textField textAdjust="StretchHeight">
+					<reportElement x="275" y="2" width="220" height="15" forecolor="#2D3748" uuid="5fa217a4-31bf-4b95-a430-c081e748bde2"/>
+					<textElement>
+						<font fontName="Arial" size="9" isItalic="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{LIBRO_ANALIZADO}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="500" y="2" width="50" height="15" forecolor="#1A659E" uuid="6fa217a4-31bf-4b95-a430-c081e748bde5"/>
+					<textElement textAlignment="Center">
+						<font fontName="Arial" size="9" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{VALORACION}]]></textFieldExpression>
+				</textField>
+				<line>
+					<reportElement x="0" y="18" width="555" height="1" forecolor="#F7C59F" uuid="bcda8433-21c2-4bef-b7ef-b749be9d4a31"/>
+					<graphicElement>
+						<pen lineWidth="0.5"/>
+					</graphicElement>
+				</line>
+			</band>
+		</groupHeader>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="50" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="5" width="345" height="20" forecolor="#1A659E" uuid="9e1a3848-1234-4bc3-9999-e65b5cb12e3c"/>
+				<textElement>
+					<font fontName="Arial" size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SISTEMA DE CLUBES DE LECTURA · UCAB]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="32" width="555" height="1" forecolor="#FF6B35" uuid="7bf38510-1c1a-4713-98fe-08bb29094fe0"/>
+				<graphicElement>
+					<pen lineWidth="2.0"/>
+				</graphicElement>
+			</line>
+			<textField pattern="dd/MM/yyyy">
+				<reportElement x="440" y="8" width="115" height="15" forecolor="#718096" uuid="4fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement textAlignment="Right">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+		</band>
 	</title>
-	<pageHeader height="155" splitType="Stretch">
-		<element kind="rectangle" uuid="1a3b37ff-90a8-4421-9d22-1fcbf8a2b5aa" mode="Opaque" x="0" y="0" width="555" height="65" backcolor="#1A659E">
-			<pen lineWidth="0.0"/>
-		</element>
-		<element kind="textField" uuid="6fa217a4-31bf-4b95-a430-c081e748bde2" x="15" y="10" width="355" height="45" forecolor="#FFFFFF" fontName="Arial" fontSize="16.0" bold="true" vTextAlign="Middle">
-			<expression><![CDATA[$F{NOMBRE_CLUB}.toUpperCase()]]></expression>
-		</element>
-		<element kind="textField" uuid="7fa217a4-31bf-4b95-a430-c081e748bde2" x="410" y="40" width="135" height="15" forecolor="#F7C59F" fontName="Arial" fontSize="10.0" italic="true">
-			<expression><![CDATA["Código de Instancia: " + $F{ID_CLUB}]]></expression>
-		</element>
-		<element kind="textField" uuid="8fa217a4-31bf-4b95-a430-c081e748bde2" x="410" y="12" width="130" height="20" forecolor="#FFFFFF" fontName="Arial" fontSize="11.0" bold="true" hTextAlign="Right" vTextAlign="Middle">
-			<expression><![CDATA[$F{TIPO_CLUB}.toUpperCase()]]></expression>
-		</element>
-		<element kind="rectangle" uuid="1bfa82a1-12c2-44df-99ef-8716bca23211" mode="Opaque" x="0" y="75" width="555" height="65" backcolor="#FFFDFB">
-			<pen lineWidth="1.0" lineColor="#F7C59F"/>
-		</element>
-		<element kind="staticText" uuid="d1e53c44-e2a2-4935-b286-90f7d5c9c30f" x="15" y="82" width="55" height="15" forecolor="#1A659E" fontName="Arial" fontSize="9.0" bold="true">
-			<text><![CDATA[Ubicación:]]></text>
-		</element>
-		<element kind="textField" uuid="9fa217a4-31bf-4b95-a430-c081e748bde2" x="75" y="82" width="200" height="15" forecolor="#2D3748" fontName="Arial" fontSize="9.0">
-			<expression><![CDATA[$F{CIUDAD} + ", " + $F{PAIS}]]></expression>
-		</element>
-		<element kind="staticText" uuid="d2e53c44-e2a2-4935-b286-90f7d5c9c30f" x="15" y="102" width="55" height="15" forecolor="#1A659E" fontName="Arial" fontSize="9.0" bold="true">
-			<text><![CDATA[Dirección:]]></text>
-		</element>
-		<element kind="textField" uuid="0fa217a4-31bf-4b95-a430-c081e748bde2" x="75" y="102" width="200" height="30" forecolor="#2D3748" fontName="Arial" fontSize="9.0">
-			<expression><![CDATA[$F{DIRECCION} + " (C.P. " + $F{CODIGO_POSTAL} + ")"]]></expression>
-		</element>
-		<element kind="staticText" uuid="d3e53c44-e2a2-4935-b286-90f7d5c9c30f" x="295" y="82" width="65" height="15" forecolor="#1A659E" fontName="Arial" fontSize="9.0" bold="true">
-			<text><![CDATA[Idioma Club:]]></text>
-		</element>
-		<element kind="textField" uuid="1fa217a4-31bf-4b95-a430-c081e748bde2" x="370" y="82" width="170" height="15" forecolor="#2D3748" fontName="Arial" fontSize="9.0" bold="true">
-			<expression><![CDATA[$F{IDIOMA_DEL_CLUB}]]></expression>
-		</element>
-		<element kind="staticText" uuid="d4e53c44-e2a2-4935-b286-90f7d5c9c30f" x="295" y="102" width="65" height="15" forecolor="#1A659E" fontName="Arial" fontSize="9.0" bold="true">
-			<text><![CDATA[Institución:]]></text>
-		</element>
-		<element kind="textField" uuid="2fa217a4-31bf-4b95-a430-c081e748bde2" x="370" y="102" width="170" height="30" forecolor="#2D3748" fontName="Arial" fontSize="9.0">
-			<expression><![CDATA[$F{INSTITUCION}]]></expression>
-		</element>
+	<pageHeader>
+		<band height="210" splitType="Stretch">
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="0" width="555" height="65" backcolor="#1A659E" uuid="1a3b37ff-90a8-4421-9d22-1fcbf8a2b5aa"/>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<textField>
+				<reportElement x="15" y="10" width="355" height="45" forecolor="#FFFFFF" uuid="6fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="16" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NOMBRE_CLUB}.toUpperCase()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="410" y="40" width="135" height="15" forecolor="#F7C59F" uuid="7fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement>
+					<font fontName="Arial" size="10" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Código de Instancia: " + $F{ID_CLUB}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="410" y="12" width="130" height="20" forecolor="#FFFFFF" uuid="8fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Arial" size="11" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TIPO_CLUB}.toUpperCase()]]></textFieldExpression>
+			</textField>
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="75" width="555" height="65" backcolor="#FFFDFB" uuid="1bfa82a1-12c2-44df-99ef-8716bca23211"/>
+				<graphicElement>
+					<pen lineWidth="1.0" lineColor="#F7C59F"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="15" y="82" width="55" height="15" forecolor="#1A659E" uuid="d1e53c44-e2a2-4935-b286-90f7d5c9c30f"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Ubicación:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="75" y="82" width="200" height="15" forecolor="#2D3748" uuid="9fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement>
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CIUDAD} + ", " + $F{PAIS}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="15" y="102" width="55" height="15" forecolor="#1A659E" uuid="d2e53c44-e2a2-4935-b286-90f7d5c9c30f"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Dirección:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="75" y="102" width="200" height="30" forecolor="#2D3748" uuid="0fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement>
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{DIRECCION} + " (C.P. " + $F{CODIGO_POSTAL} + ")"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="295" y="82" width="65" height="15" forecolor="#1A659E" uuid="d3e53c44-e2a2-4935-b286-90f7d5c9c30f"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Idioma Club:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="370" y="82" width="170" height="15" forecolor="#2D3748" uuid="1fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{IDIOMA_DEL_CLUB}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="295" y="102" width="65" height="15" forecolor="#1A659E" uuid="d4e53c44-e2a2-4935-b286-90f7d5c9c30f"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Institución:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="370" y="102" width="170" height="30" forecolor="#2D3748" uuid="2fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement>
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{INSTITUCION}]]></textFieldExpression>
+			</textField>
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="150" width="555" height="45" backcolor="#EDF2F7" uuid="41fa82a1-12c2-44df-99ef-8716bca23299"/>
+				<graphicElement>
+					<pen lineWidth="1.0" lineColor="#CBD5E0"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="15" y="155" width="315" height="15" forecolor="#2D3748" uuid="f4e53c44-e2a2-4935-b286-90f7d5c9c310"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TOTAL DE GRUPOS REGISTRADOS POR CATEGORÍA:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="15" y="174" width="155" height="15" forecolor="#1A659E" uuid="5fa217a4-31bf-4b95-a430-c081e748bdf1"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Adultos: " + $F{CANT_GRUPOS_ADULTO}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="195" y="174" width="155" height="15" forecolor="#1A659E" uuid="5fa217a4-31bf-4b95-a430-c081e748bdf2"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Jóvenes: " + $F{CANT_GRUPOS_JOVEN}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="375" y="174" width="155" height="15" forecolor="#1A659E" uuid="5fa217a4-31bf-4b95-a430-c081e748bdf3"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Niños: " + $F{CANT_GRUPOS_NINO}]]></textFieldExpression>
+			</textField>
+		</band>
 	</pageHeader>
-	<columnHeader height="25" splitType="Stretch">
-		<element kind="rectangle" uuid="7a3b37ff-90a8-4421-9d22-1fcbf8a2b5ff" mode="Opaque" x="0" y="3" width="555" height="20" backcolor="#FF6B35">
-			<pen lineWidth="0.0"/>
-		</element>
-		<element kind="staticText" uuid="e1e53c44-e2a2-4935-b286-90f7d5c9c30f" x="15" y="6" width="120" height="14" forecolor="#FFFFFF" fontName="Arial" fontSize="9.0" bold="true">
-			<text><![CDATA[CATEGORÍA GRUPO]]></text>
-		</element>
-		<element kind="staticText" uuid="e2e53c44-e2a2-4935-b286-90f7d5c9c30f" x="145" y="6" width="70" height="14" forecolor="#FFFFFF" fontName="Arial" fontSize="9.0" bold="true" hTextAlign="Center">
-			<text><![CDATA[ACTIVOS]]></text>
-		</element>
-		<element kind="staticText" uuid="e3e53c44-e2a2-4935-b286-90f7d5c9c30f" x="225" y="6" width="245" height="14" forecolor="#FFFFFF" fontName="Arial" fontSize="9.0" bold="true">
-			<text><![CDATA[ÚLTIMO LIBRO ANALIZADO u OBRA ASOCIADA]]></text>
-		</element>
-		<element kind="staticText" uuid="e4e53c44-e2a2-4935-b286-90f7d5c9c30f" x="480" y="6" width="60" height="14" forecolor="#FFFFFF" fontName="Arial" fontSize="9.0" bold="true" hTextAlign="Center">
-			<text><![CDATA[RATING]]></text>
-		</element>
+	<columnHeader>
+		<band height="25" splitType="Stretch">
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="3" width="555" height="20" backcolor="#FF6B35" uuid="7a3b37ff-90a8-4421-9d22-1fcbf8a2b5ff"/>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="5" y="6" width="105" height="14" forecolor="#FFFFFF" uuid="e1e53c44-e2a2-4935-b286-90f7d5c9c30f"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CATEGORÍA (GRUPO)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="115" y="6" width="155" height="14" forecolor="#FFFFFF" uuid="e2e53c44-e2a2-4935-b286-90f7d5c9c30f"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[MIEMBRO ACTIVO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="275" y="6" width="220" height="14" forecolor="#FFFFFF" uuid="e3e53c44-e2a2-4935-b286-90f7d5c9c30f"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[LIBRO ANALIZADO ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="500" y="6" width="50" height="14" forecolor="#FFFFFF" uuid="e4e53c44-e2a2-4935-b286-90f7d5c9c30f"/>
+				<textElement textAlignment="Center">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[RATING]]></text>
+			</staticText>
+		</band>
 	</columnHeader>
 	<detail>
-		<band height="24" splitType="Stretch">
-			<element kind="line" uuid="bcda8433-21c2-4bef-b7ef-b749be9d4a31" x="0" y="22" width="555" height="1" forecolor="#F7C59F"/>
-			<element kind="textField" uuid="3fa217a4-31bf-4b95-a430-c081e748bde2" x="15" y="4" width="120" height="15" fontName="Arial" fontSize="9.0" bold="true">
-				<expression><![CDATA[$F{TIPO_GRUPO}]]></expression>
-			</element>
-			<element kind="textField" uuid="4fa217a4-31bf-4b95-a430-c081e748bde5" x="145" y="4" width="70" height="15" fontName="Arial" fontSize="9.0" hTextAlign="Center">
-				<expression><![CDATA[$F{MIEMBROS_ACTIVOS}]]></expression>
-			</element>
-			<element kind="textField" uuid="5fa217a4-31bf-4b95-a430-c081e748bde2" x="225" y="4" width="245" height="15" forecolor="#2D3748" fontName="Arial" fontSize="9.0" italic="true">
-				<expression><![CDATA[$F{LIBRO_ANALIZADO}]]></expression>
-			</element>
-			<element kind="textField" uuid="6fa217a4-31bf-4b95-a430-c081e748bde5" x="480" y="4" width="60" height="15" forecolor="#1A659E" fontName="Arial" fontSize="9.0" bold="true" hTextAlign="Center">
-				<expression><![CDATA[$F{VALORACION}]]></expression>
-			</element>
-		</band>
+		<band splitType="Stretch"/>
 	</detail>
-	<pageFooter height="25" splitType="Stretch">
-		<element kind="textField" uuid="7fa217a4-31bf-4b95-a430-c081e748bde2" x="435" y="5" width="80" height="15" forecolor="#718096" fontName="Arial" fontSize="8.0" hTextAlign="Right">
-			<expression><![CDATA["Página "+$V{PAGE_NUMBER}+" de"]]></expression>
-		</element>
-		<element kind="textField" uuid="8fa217a4-31bf-4b95-a430-c081e748bde2" x="515" y="5" width="40" height="15" forecolor="#718096" fontName="Arial" fontSize="8.0" evaluationTime="Report">
-			<expression><![CDATA[" " + $V{PAGE_NUMBER}]]></expression>
-		</element>
+	<pageFooter>
+		<band height="25" splitType="Stretch">
+			<textField>
+				<reportElement x="435" y="5" width="80" height="15" forecolor="#718096" uuid="7fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement textAlignment="Right">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Página "+$V{PAGE_NUMBER}+" de"]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement x="515" y="5" width="40" height="15" forecolor="#718096" uuid="8fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement>
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
 	</pageFooter>
+	<summary>
+		<band height="70" splitType="Stretch">
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="10" width="555" height="50" backcolor="#EDF2F7" uuid="1bfa82a1-12c2-44df-99ef-8716bca23299"/>
+				<graphicElement>
+					<pen lineWidth="1.0" lineColor="#CBD5E0"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="15" y="16" width="230" height="15" forecolor="#2D3748" uuid="3d0e8841-a12b-42b7-a3a8-fa80cfbde32c"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CRECIMIENTO ANUAL DE MIEMBROS:]]></text>
+			</staticText>
+			<textField pattern="#,##0.00 %">
+				<reportElement x="250" y="16" width="85" height="15" forecolor="#2B6CB0" uuid="4fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CREC_MIEMBROS_PCT}.doubleValue() / 100]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="15" y="38" width="230" height="15" forecolor="#2D3748" uuid="3d0e8841-a12b-42b7-a3a8-fa80cfbde32d"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CRECIMIENTO ECONÓMICO ANUAL (USD):]]></text>
+			</staticText>
+			<textField pattern="#,##0.00 %">
+				<reportElement x="250" y="38" width="85" height="15" forecolor="#2F855A" uuid="4fa217a4-31bf-4b95-a430-c081e748bde3"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TIPO_CLUB}.equals("INDEPENDIENTE") ? ($F{CREC_ECONOMICO_PCT}.doubleValue() / 100) : 0.0]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="345" y="38" width="200" height="15" forecolor="#718096" uuid="4fa217a4-31bf-4b95-a430-c081e748bde4"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Arial" size="8" isItalic="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{TIPO_CLUB}.equals("INDEPENDIENTE") ? "* Club con Cuota de Membresía Activa" : "* No Aplica (Club Dependiente / Gratuito)"]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
 </jasperReport>

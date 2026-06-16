@@ -1,133 +1,279 @@
-<!-- Created with Jaspersoft Studio version 7.0.6.final using JasperReports Library version 7.0.6-5d2a603fdc6b3db8f842a83383e594f41891534d  -->
-<jasperReport name="SOJG_Reporte_Financiero_Avanzado" language="java" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="f3d38510-1c1a-4713-98fe-08bb29094fe0">
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 9.0.3.final using JasperReports Library version 6.21.6-ef58807af469abb082e2f734b1e78a3c47daad18  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="SOJG_Reporte_Financiero_Avanzado" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="f3d38510-1c1a-4713-98fe-08bb29094fe0">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="Oracle_Docker_Lucia"/>
-	<query language="sql"><![CDATA[SELECT 
-            v.id_club,
-            v.nombre_club,
-            v.ciudad,
-            CASE 
-                WHEN LOWER(v.ciudad) LIKE '%caracas%' THEN 'Venezuela'
-                WHEN LOWER(v.ciudad) LIKE '%roma%' OR LOWER(v.ciudad) LIKE '%milan%' THEN 'Italia'
-                ELSE 'Argentina'
-            END AS pais,
-            v.anno,
-            v.total_ingresos_membresia,
-            v.total_recaudacion_obras,
-            (v.total_ingresos_membresia + v.total_recaudacion_obras) AS ingresos_totales,
-            (SELECT COUNT(DISTINCT h.numero_de_grupo) FROM SOJG_HISTORICO_GRUPO_LECTURA h WHERE h.id_club = v.id_club AND h.fecha_fin IS NULL) AS cantidad_grupos,
-            CASE 
-                WHEN (SELECT COUNT(*) FROM SOJG_HISTORICO_GRUPO_LECTURA h WHERE h.id_club = v.id_club AND h.fecha_fin IS NULL) > 0 
-                THEN (v.total_ingresos_membresia + v.total_recaudacion_obras) / (SELECT COUNT(*) FROM SOJG_HISTORICO_GRUPO_LECTURA h WHERE h.id_club = v.id_club AND h.fecha_fin IS NULL)
-                ELSE 0
-            END AS ticket_promedio_usd
-        FROM vw_reporte_financiero v
-        WHERE v.anno IS NOT NULL
-        ORDER BY pais ASC, v.anno DESC, v.nombre_club ASC]]></query>
+	<queryString>
+		<![CDATA[WITH base_ingresos AS (
+    SELECT 
+        c.id_club,
+        c.nombre AS nombre_club,
+        ci.nombre AS ciudad,
+        p.nombre AS pais,
+        p.moneda AS moneda_local,
+        EXTRACT(YEAR FROM pm.fecha) AS anno,
+        SUM(pm.monto) AS ingresos_membresia_local
+    FROM sojg_club c
+    JOIN sojg_ciudad ci ON (c.id_ciudad = ci.id)
+    JOIN sojg_pais p ON (ci.id_pais = p.id)
+    LEFT JOIN sojg_pago_membresia pm ON (c.id_club = pm.id_club)
+    WHERE pm.fecha IS NOT NULL
+    GROUP BY c.id_club, c.nombre, ci.nombre, p.nombre, p.moneda, EXTRACT(YEAR FROM pm.fecha)
+),
+conversion_ingresos AS (
+    SELECT 
+        id_club,
+        nombre_club,
+        ciudad,
+        pais,
+        anno,
+        -- Se aplica la función de conversión monetaria del esquema a USD (asumiendo tasa de cambio promedio de 1.00 si no aplica o la tasa real si viene de la tabla país)
+        sojg_conversion_monetaria(ingresos_membresia_local, moneda_local, 1.00) AS ingresos_membresia_usd
+    FROM base_ingresos
+),
+crecimiento_economico AS (
+    SELECT 
+        id_club,
+        nombre_club,
+        ciudad,
+        pais,
+        anno,
+        ingresos_membresia_usd,
+        LAG(ingresos_membresia_usd, 1) OVER (PARTITION BY id_club ORDER BY anno) AS ingresos_membresia_ant,
+        ROUND(CASE 
+            WHEN LAG(ingresos_membresia_usd, 1) OVER (PARTITION BY id_club ORDER BY anno) > 0 
+            THEN ((ingresos_membresia_usd - LAG(ingresos_membresia_usd, 1) OVER (PARTITION BY id_club ORDER BY anno)) / LAG(ingresos_membresia_usd, 1) OVER (PARTITION BY id_club ORDER BY anno)) * 100
+            ELSE 0 
+        END, 2) AS pct_crec_economico
+    FROM conversion_ingresos
+),
+miembros_por_anno AS (
+    SELECT 
+        id_club,
+        EXTRACT(YEAR FROM fecha_inicio_membresia) AS m_anno,
+        COUNT(DISTINCT id_miembro) AS miembros_fin
+    FROM sojg_historico_membresia
+    GROUP BY id_club, EXTRACT(YEAR FROM fecha_inicio_membresia)
+),
+crecimiento_miembros AS (
+    SELECT 
+        id_club,
+        m_anno AS anno,
+        miembros_fin,
+        LAG(miembros_fin, 1) OVER (PARTITION BY id_club ORDER BY m_anno) AS miembros_inicio,
+        ROUND(CASE 
+            WHEN LAG(miembros_fin, 1) OVER (PARTITION BY id_club ORDER BY m_anno) > 0 
+            THEN ((miembros_fin - LAG(miembros_fin, 1) OVER (PARTITION BY id_club ORDER BY m_anno)) / LAG(miembros_fin, 1) OVER (PARTITION BY id_club ORDER BY m_anno)) * 100
+            ELSE 0 
+        END, 2) AS pct_crec_miembros
+    FROM miembros_por_anno
+)
+SELECT 
+    ce.id_club,
+    ce.nombre_club,
+    ce.ciudad,
+    ce.pais,
+    ce.anno,
+    ce.ingresos_membresia_usd,
+    NVL(cm.pct_crec_miembros, 0) AS crecimiento_miembros_pct,
+    NVL(ce.pct_crec_economico, 0) AS crecimiento_economico_pct
+FROM crecimiento_economico ce
+LEFT JOIN crecimiento_miembros cm ON (ce.id_club = cm.id_club AND ce.anno = cm.anno)
+ORDER BY ce.pais DESC, ce.anno DESC, ce.nombre_club ASC]]>
+	</queryString>
+	<field name="ID_CLUB" class="java.math.BigDecimal"/>
 	<field name="NOMBRE_CLUB" class="java.lang.String"/>
 	<field name="CIUDAD" class="java.lang.String"/>
 	<field name="PAIS" class="java.lang.String"/>
 	<field name="ANNO" class="java.math.BigDecimal"/>
-	<field name="TOTAL_INGRESOS_MEMBRESIA" class="java.math.BigDecimal"/>
-	<field name="TOTAL_RECAUDACION_OBRAS" class="java.math.BigDecimal"/>
-	<field name="INGRESOS_TOTALES" class="java.math.BigDecimal"/>
-	<field name="CANTIDAD_GRUPOS" class="java.math.BigDecimal"/>
-	<field name="TICKET_PROMEDIO_USD" class="java.math.BigDecimal"/>
-	<variable name="SUMA_GLOBAL_INGRESOS" calculation="Sum" class="java.math.BigDecimal">
-		<expression><![CDATA[$F{INGRESOS_TOTALES}]]></expression>
+	<field name="INGRESOS_MEMBRESIA_USD" class="java.math.BigDecimal"/>
+	<field name="CRECIMIENTO_MIEMBROS_PCT" class="java.math.BigDecimal"/>
+	<field name="CRECIMIENTO_ECONOMICO_PCT" class="java.math.BigDecimal"/>
+	<variable name="SUMA_GLOBAL_INGRESOS" class="java.math.BigDecimal" calculation="Sum">
+		<variableExpression><![CDATA[$F{INGRESOS_MEMBRESIA_USD}]]></variableExpression>
 	</variable>
 	<group name="PaisGroup">
-		<expression><![CDATA[$F{PAIS}]]></expression>
+		<groupExpression><![CDATA[$F{PAIS}]]></groupExpression>
 		<groupHeader>
 			<band height="25">
-				<element kind="rectangle" uuid="2a3b37ff-90a8-4421-9d22-1fcbf8a2b53f" mode="Opaque" x="0" y="2" width="555" height="20" backcolor="#F7C59F">
-					<pen lineWidth="0.0"/>
-				</element>
-				<element kind="textField" uuid="6fa217a4-31bf-4b95-a430-c081e748bde2" x="10" y="4" width="300" height="16" forecolor="#FFFFFF" fontName="Arial" fontSize="11.0" bold="true" vTextAlign="Middle">
-					<expression><![CDATA[$F{PAIS}.toUpperCase()]]></expression>
-				</element>
+				<rectangle>
+					<reportElement mode="Opaque" x="0" y="2" width="555" height="20" backcolor="#F7C59F" uuid="2a3b37ff-90a8-4421-9d22-1fcbf8a2b53f"/>
+					<graphicElement>
+						<pen lineWidth="0.0"/>
+					</graphicElement>
+				</rectangle>
+				<textField>
+					<reportElement x="10" y="4" width="300" height="16" forecolor="#FFFFFF" uuid="6fa217a4-31bf-4b95-a430-c081e748bde2"/>
+					<textElement verticalAlignment="Middle">
+						<font fontName="Arial" size="11" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{PAIS}.toUpperCase()]]></textFieldExpression>
+				</textField>
 			</band>
 		</groupHeader>
 	</group>
-	<background splitType="Stretch"/>
-	<title height="85" splitType="Stretch">
-		<element kind="rectangle" uuid="a3c9b77d-7881-424a-81f7-bd35d978a3c1" mode="Opaque" x="0" y="0" width="555" height="60" backcolor="#FF6B35">
-			<pen lineWidth="0.0"/>
-		</element>
-		<element kind="staticText" uuid="9e1a3848-1234-4bc3-9999-e65b5cb12e3c" x="15" y="10" width="345" height="25" forecolor="#FFFFFF" fontName="Arial" fontSize="16.0" bold="true">
-			<text><![CDATA[RENDIMIENTO OPERATIVO Y FINANCIERO]]></text>
-		</element>
-		<element kind="staticText" uuid="7a2c3d4e-5f6a-4b2c-8d1e-9f0a2b3c4d5e" x="15" y="33" width="345" height="15" forecolor="#E2E8F0" fontName="Arial" fontSize="9.0" italic="true">
-			<text><![CDATA[Análisis de Escala, Capacidad y Recaudación Consolidada]]></text>
-		</element>
-		<element kind="staticText" uuid="bc239129-9c12-4c2d-9844-31bfa11b9319" x="380" y="12" width="160" height="38" forecolor="#FFFFFF" markup="html" fontName="Arial" fontSize="8.0" hTextAlign="Right">
-			<text><![CDATA[Sistemas de Ingeniería UCAB
-Estatus Base: Producción]]></text>
-		</element>
+	<title>
+		<band height="85" splitType="Stretch">
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="0" width="555" height="60" backcolor="#FF6B35" uuid="a3c9b77d-7881-424a-81f7-bd35d978a3c1"/>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="15" y="10" width="345" height="25" forecolor="#FFFFFF" uuid="9e1a3848-1234-4bc3-9999-e65b5cb12e3c"/>
+				<textElement>
+					<font fontName="Arial" size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[RENDIMIENTO OPERATIVO Y FINANCIERO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="15" y="33" width="345" height="15" forecolor="#E2E8F0" uuid="7a2c3d4e-5f6a-4b2c-8d1e-9f0a2b3c4d5e"/>
+				<textElement>
+					<font fontName="Arial" size="9" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Análisis de Crecimiento Anual, Escala Monetaria (USD) y Membresías]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="380" y="12" width="160" height="38" forecolor="#FFFFFF" uuid="bc239129-9c12-4c2d-9844-31bfa11b9319"/>
+				<textElement textAlignment="Right" markup="html">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<text><![CDATA[Sistemas de Ingeniería UCAB<br/>Estatus Base: Histórico Convertido]]></text>
+			</staticText>
+		</band>
 	</title>
-	<columnHeader height="25" splitType="Stretch">
-		<element kind="rectangle" uuid="7a3b37ff-90a8-4421-9d22-1fcbf8a2b5aa" mode="Opaque" x="0" y="0" width="555" height="22" backcolor="#1A659E">
-			<pen lineWidth="0.0"/>
-		</element>
-		<element kind="staticText" uuid="d6e53c44-e2a2-4935-b286-90f7d5c9c30f" x="5" y="4" width="35" height="15" forecolor="#FFFFFF" fontName="Arial" fontSize="9.0" bold="true" hTextAlign="Center">
-			<text><![CDATA[AÑO]]></text>
-		</element>
-		<element kind="staticText" uuid="d1c23b44-342a-4f56-831d-85f8d5c9c30f" x="45" y="4" width="135" height="15" forecolor="#FFFFFF" fontName="Arial" fontSize="9.0" bold="true">
-			<text><![CDATA[CLUB DE LECTURA]]></text>
-		</element>
-		<element kind="staticText" uuid="d2c23b44-342a-4f56-831d-85f8d5c9c30f" x="185" y="4" width="75" height="15" forecolor="#FFFFFF" fontName="Arial" fontSize="9.0" bold="true">
-			<text><![CDATA[CIUDAD]]></text>
-		</element>
-		<element kind="staticText" uuid="d2c53b44-342a-4f56-831d-85f8d5c9c30f" x="265" y="4" width="45" height="15" forecolor="#FFFFFF" fontName="Arial" fontSize="9.0" bold="true" hTextAlign="Center">
-			<text><![CDATA[GRUPOS]]></text>
-		</element>
-		<element kind="staticText" uuid="d3c23b44-342a-4f56-831d-85f8d5c9c30f" x="315" y="4" width="75" height="15" forecolor="#FFFFFF" fontName="Arial" fontSize="9.0" bold="true" hTextAlign="Right">
-			<text><![CDATA[MEMBRESÍAS]]></text>
-		</element>
-		<element kind="staticText" uuid="d4c23b44-342a-4f56-831d-85f8d5c9c30f" x="395" y="4" width="75" height="15" forecolor="#FFFFFF" fontName="Arial" fontSize="9.0" bold="true" hTextAlign="Right">
-			<text><![CDATA[TAQUILLA]]></text>
-		</element>
-		<element kind="staticText" uuid="d5c23b44-342a-4f56-831d-85f8d5c9c30f" x="475" y="4" width="75" height="15" forecolor="#FFFFFF" fontName="Arial" fontSize="9.0" bold="true" hTextAlign="Right">
-			<text><![CDATA[TICKET PROMEDIO]]></text>
-		</element>
+	<columnHeader>
+		<band height="25" splitType="Stretch">
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="0" width="555" height="22" backcolor="#1A659E" uuid="7a3b37ff-90a8-4421-9d22-1fcbf8a2b5aa"/>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="5" y="4" width="35" height="15" forecolor="#FFFFFF" uuid="d6e53c44-e2a2-4935-b286-90f7d5c9c30f"/>
+				<textElement textAlignment="Center">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[AÑO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="45" y="4" width="135" height="15" forecolor="#FFFFFF" uuid="d1c23b44-342a-4f56-831d-85f8d5c9c30f"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CLUB DE LECTURA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="185" y="4" width="75" height="15" forecolor="#FFFFFF" uuid="d2c23b44-342a-4f56-831d-85f8d5c9c30f"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CIUDAD]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="265" y="4" width="95" height="15" forecolor="#FFFFFF" uuid="d2c53b44-342a-4f56-831d-85f8d5c9c30f"/>
+				<textElement textAlignment="Center">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CREC. MIEMBROS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="365" y="4" width="95" height="15" forecolor="#FFFFFF" uuid="d3c23b44-342a-4f56-831d-85f8d5c9c30f"/>
+				<textElement textAlignment="Right">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[RECAUDACIÓN (USD)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="465" y="4" width="85" height="15" forecolor="#FFFFFF" uuid="d5c23b44-342a-4f56-831d-85f8d5c9c30f"/>
+				<textElement textAlignment="Right">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CREC. ECONÓMICO]]></text>
+			</staticText>
+		</band>
 	</columnHeader>
 	<detail>
-		<band height="22" splitType="Stretch">
-			<element kind="line" uuid="bcda8433-21c2-4bef-b7ef-b749be9d4a31" x="0" y="19" width="555" height="1" forecolor="#E2E8F0"/>
-			<element kind="textField" uuid="5fa217a4-31bf-4b95-a430-c081e748bde2" x="5" y="2" width="35" height="15" fontName="Arial" fontSize="9.0" hTextAlign="Center">
-				<expression><![CDATA[$F{ANNO}]]></expression>
-			</element>
-			<element kind="textField" uuid="6fa217a4-31bf-4b95-a430-c081e748bde2" x="45" y="2" width="135" height="15" fontName="Arial" fontSize="9.0" bold="true">
-				<expression><![CDATA[$F{NOMBRE_CLUB}]]></expression>
-			</element>
-			<element kind="textField" uuid="7fa217a4-31bf-4b95-a430-c081e748bde2" x="185" y="2" width="75" height="15" fontName="Arial" fontSize="9.0">
-				<expression><![CDATA[$F{CIUDAD}]]></expression>
-			</element>
-			<element kind="textField" uuid="7fa217a4-31bf-4b95-a430-c081e748bde5" x="265" y="2" width="45" height="15" fontName="Arial" fontSize="9.0" bold="true" hTextAlign="Center">
-				<expression><![CDATA[$F{CANTIDAD_GRUPOS}]]></expression>
-			</element>
-			<element kind="textField" uuid="8fa217a4-31bf-4b95-a430-c081e748bde2" x="315" y="2" width="75" height="15" fontName="Arial" fontSize="9.0" pattern="$#,##0.00" hTextAlign="Right">
-				<expression><![CDATA[$F{TOTAL_INGRESOS_MEMBRESIA}]]></expression>
-			</element>
-			<element kind="textField" uuid="9fa217a4-31bf-4b95-a430-c081e748bde2" x="395" y="2" width="75" height="15" fontName="Arial" fontSize="9.0" pattern="$#,##0.00" hTextAlign="Right">
-				<expression><![CDATA[$F{TOTAL_RECAUDACION_OBRAS}]]></expression>
-			</element>
-			<element kind="textField" uuid="0fa217a4-31bf-4b95-a430-c081e748bde2" x="475" y="2" width="75" height="15" forecolor="#2B6CB0" fontName="Arial" fontSize="9.0" pattern="$#,##0.00" bold="true" hTextAlign="Right">
-				<expression><![CDATA[$F{TICKET_PROMEDIO_USD}]]></expression>
-			</element>
+		<band height="41" splitType="Stretch">
+			<line>
+				<reportElement x="0" y="32" width="555" height="1" forecolor="#E2E8F0" uuid="bcda8433-21c2-4bef-b7ef-b749be9d4a31"/>
+				<graphicElement>
+					<pen lineWidth="1.0"/>
+				</graphicElement>
+			</line>
+			<textField>
+				<reportElement x="5" y="2" width="35" height="15" uuid="5fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement textAlignment="Center">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ANNO}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="45" y="2" width="135" height="30" uuid="6fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement>
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{NOMBRE_CLUB}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="185" y="2" width="75" height="15" uuid="7fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement>
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CIUDAD}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 %">
+				<reportElement x="265" y="2" width="95" height="15" forecolor="#2B6CB0" uuid="7fa217a4-31bf-4b95-a430-c081e748bde5"/>
+				<textElement textAlignment="Center">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CRECIMIENTO_MIEMBROS_PCT}.doubleValue() / 100]]></textFieldExpression>
+			</textField>
+			<textField pattern="$#,##0.00">
+				<reportElement x="365" y="2" width="95" height="15" uuid="8fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement textAlignment="Right">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{INGRESOS_MEMBRESIA_USD}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.00 %">
+				<reportElement x="465" y="2" width="85" height="15" forecolor="#2F855A" uuid="0fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement textAlignment="Right">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{CRECIMIENTO_ECONOMICO_PCT}.doubleValue() / 100]]></textFieldExpression>
+			</textField>
 		</band>
 	</detail>
-	<summary height="50" splitType="Stretch">
-		<element kind="rectangle" uuid="1bfa82a1-12c2-44df-99ef-8716bca23211" mode="Opaque" x="0" y="10" width="555" height="30" backcolor="#EDF2F7">
-			<pen lineWidth="0.0"/>
-		</element>
-		<element kind="staticText" uuid="3d0e8841-a12b-42b7-a3a8-fa80cfbde32c" x="15" y="17" width="250" height="16" forecolor="#2D3748" fontName="Arial" fontSize="10.0" bold="true" vTextAlign="Middle">
-			<text><![CDATA[RECAUDACIÓN BRUTA GLOBAL (SISTEMA):]]></text>
-		</element>
-		<element kind="textField" uuid="4fa217a4-31bf-4b95-a430-c081e748bde2" x="390" y="15" width="160" height="20" forecolor="#1A365D" fontName="Arial" fontSize="11.0" pattern="$#,##0.00" bold="true" hTextAlign="Right" vTextAlign="Middle">
-			<expression><![CDATA[$V{SUMA_GLOBAL_INGRESOS}]]></expression>
-		</element>
-		<element kind="line" uuid="7cf38510-1c1a-4713-98fe-08bb29094fe0" x="0" y="10" width="555" height="1" forecolor="#1A365D">
-			<pen lineWidth="1.5"/>
-		</element>
+	<summary>
+		<band height="50" splitType="Stretch">
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="10" width="555" height="30" backcolor="#EDF2F7" uuid="1bfa82a1-12c2-44df-99ef-8716bca23211"/>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="15" y="17" width="285" height="16" forecolor="#2D3748" uuid="3d0e8841-a12b-42b7-a3a8-fa80cfbde32c"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TOTAL RECAUDADO POR MEMBRESÍAS CONVERTIDO (USD):]]></text>
+			</staticText>
+			<textField pattern="$#,##0.00">
+				<reportElement x="390" y="15" width="160" height="20" forecolor="#1A365D" uuid="4fa217a4-31bf-4b95-a430-c081e748bde2"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Arial" size="11" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{SUMA_GLOBAL_INGRESOS}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="0" y="10" width="555" height="1" forecolor="#1A365D" uuid="7cf38510-1c1a-4713-98fe-08bb29094fe0"/>
+				<graphicElement>
+					<pen lineWidth="1.5"/>
+				</graphicElement>
+			</line>
+		</band>
 	</summary>
 </jasperReport>
