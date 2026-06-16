@@ -11,6 +11,13 @@ from sojg_ciudad c
 join sojg_pais p on (c.id_pais = p.id)
 order by p.nombre, c.nombre;
 prompt ==========================================
+prompt   Instituciones disponibles:
+prompt ==========================================
+col id     format 999
+col nombre format a45
+col tipo   format a15
+select id, nombre, tipo from sojg_institucion order by id;
+prompt ==========================================
 
 accept v_nombre    char   prompt 'Nombre del club: '
 accept v_direccion char   prompt 'Direccion: '
