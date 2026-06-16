@@ -445,6 +445,115 @@ exception
 end sojg_sp_actualizar_morosos;
 /
 
+-- SP: Registrar grupo de lectura
+create or replace procedure sojg_sp_registrar_grupo(
+    p_id_club      in number,
+    p_categoria    in varchar2,
+    p_dia_reunion  in varchar2,
+    p_hora_inicio  in number
+) is
+    v_count        number;
+    v_num_grupo    number;
+begin
+    -- validar que el club exista
+    select count(*) into v_count from sojg_club
+        where (id_club = p_id_club);
+    if (v_count = 0) then
+        raise_application_error(-20200, 'El club especificado no existe.');
+    end if;
+
+    -- validar categoria
+    if (p_categoria not in ('Adulto', 'Joven', 'Nino')) then
+        raise_application_error(-20201, 'Categoria invalida. Debe ser: Adulto, Joven o Nino.');
+    end if;
+
+    -- validar dia
+    if (p_dia_reunion not in ('Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes')) then
+        raise_application_error(-20202, 'Dia invalido. Debe ser: Lunes, Martes, Miercoles, Jueves o Viernes.');
+    end if;
+
+    -- validar hora
+    if (p_hora_inicio < 17 or p_hora_inicio > 19) then
+        raise_application_error(-20203, 'La hora debe estar entre 17 y 19.');
+    end if;
+
+    -- calcular numero de grupo
+    select nvl(max(numero_de_grupo), 0) + 1 into v_num_grupo
+        from sojg_grupo_de_lectura where (id_club = p_id_club);
+
+    insert into sojg_grupo_de_lectura (id_club, numero_de_grupo, fecha_de_creacion, categoria_edad, dia_reunion, hora_inicio)
+        values (p_id_club, v_num_grupo, sysdate, p_categoria, p_dia_reunion, p_hora_inicio);
+
+    dbms_output.put_line('Grupo ' || v_num_grupo || ' registrado exitosamente en el club ' || p_id_club || '.');
+    commit;
+exception
+    when others then rollback; raise;
+end sojg_sp_registrar_grupo;
+/
+
+-- SP: Validar expulsiones
+create or replace procedure sojg_sp_validar_expulsiones(
+    p_id_club    in number,
+    p_id_miembro in number
+) is
+    v_total_reuniones number;
+    v_total_faltas    number;
+    v_pct_faltas      number;
+    v_nombre          varchar2(200);
+    v_fecha_inicio    date;
+begin
+    -- obtener nombre y fecha de inicio del miembro en el grupo
+    select l.nombre || ' ' || l.apellido, hg.fecha_inicio
+    into v_nombre, v_fecha_inicio
+    from sojg_lector l
+    join sojg_historico_grupo_lectura hg on (l.id_miembro = hg.id_miembro)
+    where (l.id_miembro = p_id_miembro)
+        and (hg.id_club = p_id_club)
+        and (hg.fecha_fin is null)
+        and rownum = 1;
+
+    -- reuniones realizadas desde que entro al grupo
+    select count(*) into v_total_reuniones
+    from sojg_calendario_mes cm
+    join sojg_historico_grupo_lectura hg
+        on (cm.id_club = hg.id_club)
+        and (cm.numero_de_grupo = hg.numero_de_grupo)
+    where (hg.id_miembro = p_id_miembro)
+        and (hg.id_club = p_id_club)
+        and (hg.fecha_fin is null)
+        and (cm.realizada = 'SI')
+        and (cm.fecha_reunion >= v_fecha_inicio);
+
+    -- inasistencias desde que entro al grupo
+    select count(*) into v_total_faltas
+    from sojg_inasistencia i
+    join sojg_historico_grupo_lectura hg
+        on (i.id_club = hg.id_club)
+        and (i.numero_de_grupo = hg.numero_de_grupo)
+    where (i.id_miembro = p_id_miembro)
+        and (hg.id_club = p_id_club)
+        and (hg.fecha_fin is null)
+        and (i.fecha_reunion >= v_fecha_inicio);
+
+    if (v_total_reuniones > 0) then
+        v_pct_faltas := round((v_total_faltas / v_total_reuniones) * 100, 2);
+
+        if (v_pct_faltas > 30) then
+            dbms_output.put_line('Expulsando a ' || v_nombre ||
+                ' — ' || v_total_faltas || ' inasistencias de ' ||
+                v_total_reuniones || ' reuniones (' || v_pct_faltas || '%).');
+            sojg_sp_expulsar_miembro(p_id_miembro, p_id_club, 'Inasistencia');
+        end if;
+    end if;
+
+exception
+    when no_data_found then null; 
+    when others then raise;
+end sojg_sp_validar_expulsiones;
+/
+
+
+
 -- ==========================================
 -- ADMINISTRACION DE REUNIONES
 -- ==========================================
@@ -814,8 +923,9 @@ exception
 end sojg_sp_realizar_reunion;
 /
 
+
 -- SP12: Registrar inasistencia
--- si el miembro supera 30% de faltas en el bimestre lo expulsa automaticamente
+-- usa sojg_sp_validar_expulsiones como subrutina
 create or replace procedure sojg_sp_registrar_inasistencia(
     p_id_club      in number,
     p_numero_grupo in number,
@@ -823,10 +933,8 @@ create or replace procedure sojg_sp_registrar_inasistencia(
     p_fecha        in date,
     p_id_miembro   in number
 ) is
-    v_realizada  varchar2(2);
-    v_count      number;
-    v_bimestre   number;
-    v_pct_faltas number;
+    v_realizada varchar2(2);
+    v_count     number;
 begin
     -- validar que la reunion existe y fue realizada
     select realizada into v_realizada from sojg_calendario_mes
@@ -859,15 +967,8 @@ begin
     insert into sojg_inasistencia (id_club, numero_de_grupo, isbn_libro, fecha_reunion, id_miembro)
         values (p_id_club, p_numero_grupo, p_isbn_libro, p_fecha, p_id_miembro);
 
-    -- verificar si supera 30% de faltas en el bimestre y expulsar automaticamente
-    v_bimestre   := ceil(extract(month from p_fecha) / 2);
-    v_pct_faltas := 100 - sojg_pct_participacion_bimestre_miembro(
-        p_id_miembro, v_bimestre, extract(year from p_fecha)
-    );
-
-    if (v_pct_faltas > 30) then
-        sojg_sp_expulsar_miembro(p_id_miembro, p_id_club, 'Inasistencia');
-    end if;
+    -- validar expulsion automaticamente para este miembro
+    sojg_sp_validar_expulsiones(p_id_club, p_id_miembro);
 
     commit;
 exception
